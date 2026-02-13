@@ -113,7 +113,7 @@ export function Nav() {
       </nav>
 
       <div
-        className={`fixed inset-0 z-50 flex flex-col bg-brand-brown transition-opacity duration-200 lg:hidden ${
+        className={`fixed inset-0 z-[9999] flex flex-col bg-brand-brown transition-opacity duration-200 lg:hidden ${
           menuOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
         aria-hidden={!menuOpen}
