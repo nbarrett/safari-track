@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { get, set, createStore } from "idb-keyval";
 
 interface GpsPoint {
   lat: number;
@@ -10,16 +11,47 @@ interface GpsPoint {
 
 interface GpsTrackerOptions {
   intervalMs?: number;
+  driveId?: string | null;
   onPoints: (points: GpsPoint[]) => void;
 }
 
-export function useGpsTracker({ intervalMs = 5000, onPoints }: GpsTrackerOptions) {
+const GPS_BUFFER_KEY = "gps-route-buffer";
+const gpsStore = typeof window !== "undefined"
+  ? createStore("klaserie-gps", "buffer")
+  : undefined;
+
+async function persistBuffer(points: GpsPoint[]) {
+  if (!gpsStore) return;
+  const existing = (await get<GpsPoint[]>(GPS_BUFFER_KEY, gpsStore)) ?? [];
+  await set(GPS_BUFFER_KEY, [...existing, ...points], gpsStore);
+}
+
+export async function getPersistedBuffer(): Promise<GpsPoint[]> {
+  if (!gpsStore) return [];
+  return (await get<GpsPoint[]>(GPS_BUFFER_KEY, gpsStore)) ?? [];
+}
+
+export async function clearPersistedBuffer() {
+  if (!gpsStore) return;
+  await set(GPS_BUFFER_KEY, [], gpsStore);
+}
+
+export function useGpsTracker({ intervalMs = 5000, driveId, onPoints }: GpsTrackerOptions) {
   const [tracking, setTracking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPosition, setCurrentPosition] = useState<GpsPoint | null>(null);
   const bufferRef = useRef<GpsPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
   const flushIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (!driveId) return;
+    void getPersistedBuffer().then((persisted) => {
+      if (persisted.length > 0) {
+        onPoints(persisted);
+      }
+    });
+  }, [driveId, onPoints]);
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
@@ -52,7 +84,9 @@ export function useGpsTracker({ intervalMs = 5000, onPoints }: GpsTrackerOptions
 
     flushIntervalRef.current = setInterval(() => {
       if (bufferRef.current.length > 0) {
-        onPoints(bufferRef.current);
+        const points = bufferRef.current;
+        onPoints(points);
+        void persistBuffer(points);
         bufferRef.current = [];
       }
     }, intervalMs);
@@ -69,7 +103,9 @@ export function useGpsTracker({ intervalMs = 5000, onPoints }: GpsTrackerOptions
     }
 
     if (bufferRef.current.length > 0) {
-      onPoints(bufferRef.current);
+      const points = bufferRef.current;
+      onPoints(points);
+      void persistBuffer(points);
       bufferRef.current = [];
     }
 

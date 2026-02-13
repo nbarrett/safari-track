@@ -15,7 +15,7 @@
     "noUncheckedIndexedAccess": true,
 
     /* Bundled projects */
-    "lib": ["dom", "dom.iterable", "ES2022"],
+    "lib": ["dom", "dom.iterable", "ES2022", "WebWorker"],
     "noEmit": true,
     "module": "ESNext",
     "moduleResolution": "Bundler",
@@ -35,5 +35,5 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "generated"]
+  "exclude": ["node_modules", "generated", "public/sw.js", "public/swe-worker-*.js"]
 }

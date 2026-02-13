@@ -11,6 +11,15 @@ export const metadata: Metadata = {
   title: "Klaserie Camps",
   description: "GPS wildlife tracking for Klaserie Private Nature Reserve",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Klaserie Camps",
+  },
+  other: {
+    "theme-color": "#6B4C2E",
+  },
 };
 
 const geist = Geist({

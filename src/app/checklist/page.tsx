@@ -6,6 +6,8 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
+import { precacheSpeciesImages } from "~/lib/precache-images";
+import { useOfflineMutation } from "~/lib/use-offline-mutation";
 
 const CATEGORY_CARDS = [
   { key: "All", label: "All Species", image: "/hero-elephants.jpg" },
@@ -57,14 +59,28 @@ export default function ChecklistPage() {
     { enabled: isGuest && activeCategory !== "All" },
   );
   const allSpecies = api.species.list.useQuery(undefined, {
-    enabled: isGuest && activeCategory === "All",
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: Infinity,
   });
+
+  useEffect(() => {
+    const urls = (allSpecies.data ?? [])
+      .map((s) => s.imageUrl)
+      .filter((url): url is string => !!url);
+    if (urls.length > 0) {
+      void precacheSpeciesImages(urls);
+    }
+  }, [allSpecies.data]);
 
   const stats = api.checklist.stats.useQuery(undefined, {
     enabled: !!session,
   });
 
-  const toggleSpotted = api.checklist.toggleSpotted.useMutation({
+  const toggleSpottedMutation = api.checklist.toggleSpotted.useMutation();
+  const toggleSpotted = useOfflineMutation({
+    path: "checklist.toggleSpotted",
+    mutationFn: (input: { speciesId: string }) =>
+      toggleSpottedMutation.mutateAsync(input),
     onSuccess: () => {
       void utils.checklist.myChecklist.invalidate();
       void utils.checklist.stats.invalidate();
@@ -357,6 +373,7 @@ export default function ChecklistPage() {
                           <img
                             src={item.imageUrl}
                             alt={item.commonName}
+                            crossOrigin="anonymous"
                             className="aspect-square w-full object-cover transition hover:scale-105"
                           />
                         </button>
@@ -430,6 +447,7 @@ export default function ChecklistPage() {
                                 <img
                                   src={item.imageUrl}
                                   alt={item.commonName}
+                                  crossOrigin="anonymous"
                                   className={`${thumbSize === "sm" ? "h-12 w-12" : thumbSize === "lg" ? "h-20 w-20" : "h-32 w-32"} rounded-xl object-cover shadow-sm transition hover:scale-105 hover:shadow-md`}
                                 />
                               </button>
@@ -454,6 +472,7 @@ export default function ChecklistPage() {
                                 <img
                                   src={item.imageUrl}
                                   alt={item.commonName}
+                                  crossOrigin="anonymous"
                                   className={`${thumbSize === "sm" ? "h-12 w-12" : thumbSize === "lg" ? "h-20 w-20" : "h-32 w-32"} rounded-xl object-cover shadow-sm transition hover:scale-105 hover:shadow-md`}
                                 />
                               </button>
@@ -489,6 +508,7 @@ export default function ChecklistPage() {
             <img
               src={expandedImage.url.replace(/\/\d+px-/, "/800px-")}
               alt={expandedImage.name}
+              crossOrigin="anonymous"
               className="max-h-[70vh] w-full object-contain"
             />
             <div className="px-4 py-3 text-center">

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { useOfflineMutation } from "~/lib/use-offline-mutation";
 
 interface SightingFormProps {
   driveSessionId: string;
@@ -31,16 +32,34 @@ export function SightingForm({
 
   const speciesList = api.species.list.useQuery(undefined, {
     enabled: searchQuery.length <= 1,
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: Infinity,
   });
 
-  const markChecklist = api.checklist.markFromSighting.useMutation();
+  const markChecklistMutation = api.checklist.markFromSighting.useMutation();
+  const createSightingMutation = api.sighting.create.useMutation();
 
-  const createSighting = api.sighting.create.useMutation({
-    onSuccess: (data) => {
-      markChecklist.mutate({
-        speciesId: data.speciesId,
-        latitude: data.latitude,
-        longitude: data.longitude,
+  const offlineMarkChecklist = useOfflineMutation({
+    path: "checklist.markFromSighting",
+    mutationFn: (input: { speciesId: string; latitude: number; longitude: number }) =>
+      markChecklistMutation.mutateAsync(input),
+  });
+
+  const offlineCreateSighting = useOfflineMutation({
+    path: "sighting.create",
+    mutationFn: (input: {
+      driveSessionId: string;
+      speciesId: string;
+      latitude: number;
+      longitude: number;
+      count: number;
+      notes?: string;
+    }) => createSightingMutation.mutateAsync(input),
+    onSuccess: (_result, input) => {
+      offlineMarkChecklist.mutate({
+        speciesId: input.speciesId,
+        latitude: input.latitude,
+        longitude: input.longitude,
       });
       onComplete();
     },
@@ -54,7 +73,7 @@ export function SightingForm({
     e.preventDefault();
     if (!selectedSpeciesId) return;
 
-    createSighting.mutate({
+    offlineCreateSighting.mutate({
       driveSessionId,
       speciesId: selectedSpeciesId,
       latitude,
@@ -146,10 +165,10 @@ export function SightingForm({
       <div className="flex gap-2">
         <button
           type="submit"
-          disabled={!selectedSpeciesId || createSighting.isPending}
+          disabled={!selectedSpeciesId || offlineCreateSighting.isPending}
           className="rounded-md bg-brand-green px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-green-light disabled:opacity-50"
         >
-          {createSighting.isPending ? "Saving..." : "Save Sighting"}
+          {offlineCreateSighting.isPending ? "Saving..." : "Save Sighting"}
         </button>
         <button
           type="button"

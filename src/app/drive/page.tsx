@@ -5,8 +5,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { api } from "~/trpc/react";
-import { useGpsTracker } from "~/app/_components/gps-tracker";
+import { useGpsTracker, clearPersistedBuffer } from "~/app/_components/gps-tracker";
 import { SightingForm } from "~/app/_components/sighting-form";
+import { useOfflineMutation } from "~/lib/use-offline-mutation";
+import { generateTempId, enqueue } from "~/lib/offline-queue";
+import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints } from "~/lib/drive-store";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
@@ -58,47 +61,81 @@ export default function DrivePage() {
   const [sightingLocation, setSightingLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [localDriveId, setLocalDriveId] = useState<string | null>(null);
+  const [localStartedAt, setLocalStartedAt] = useState<string | null>(null);
 
   const utils = api.useUtils();
+
+  useEffect(() => {
+    void getLocalDrive().then((drive) => {
+      if (drive) {
+        setLocalDriveId(drive.id);
+        setLocalStartedAt(drive.startedAt);
+        setRoutePoints(drive.routePoints);
+      }
+    });
+  }, []);
 
   const activeDrive = api.drive.active.useQuery(undefined, {
     enabled: status === "authenticated",
   });
 
-  const startDrive = api.drive.start.useMutation();
+  const startDriveMutation = api.drive.start.useMutation();
+  const endDriveMutation = api.drive.end.useMutation();
+  const addRoutePointsMutation = api.drive.addRoutePoints.useMutation();
 
-  const endDrive = api.drive.end.useMutation({
+  const offlineAddRoutePoints = useOfflineMutation({
+    path: "drive.addRoutePoints",
+    mutationFn: (input: { id: string; points: GpsPoint[] }) =>
+      addRoutePointsMutation.mutateAsync(input),
+  });
+
+  const offlineEndDrive = useOfflineMutation({
+    path: "drive.end",
+    mutationFn: (input: { id: string }) => endDriveMutation.mutateAsync(input),
     onSuccess: () => {
       setRoutePoints([]);
       setMutationError(null);
+      setLocalDriveId(null);
+      setLocalStartedAt(null);
+      void clearLocalDrive();
+      void clearPersistedBuffer();
       void utils.drive.active.invalidate();
       void utils.drive.list.invalidate();
     },
-    onError: (err) => {
-      setMutationError(err.message);
+    onError: (err) => setMutationError(err.message),
+    onOfflineQueued: () => {
+      setRoutePoints([]);
+      setLocalDriveId(null);
+      setLocalStartedAt(null);
+      void clearLocalDrive();
+      void clearPersistedBuffer();
     },
   });
-
-  const addRoutePoints = api.drive.addRoutePoints.useMutation();
 
   const handleGpsPoints = useCallback(
     (points: GpsPoint[]) => {
       setRoutePoints((prev) => [...prev, ...points]);
-      if (activeDrive.data) {
-        addRoutePoints.mutate({ id: activeDrive.data.id, points });
+      void addLocalRoutePoints(points);
+      const driveId = activeDrive.data?.id ?? localDriveId;
+      if (driveId) {
+        offlineAddRoutePoints.mutate({ id: driveId, points });
       }
     },
-    [activeDrive.data, addRoutePoints],
+    [activeDrive.data, localDriveId, offlineAddRoutePoints],
   );
+
+  const driveId = activeDrive.data?.id ?? localDriveId;
 
   const { tracking, error: gpsError, currentPosition, startTracking, stopTracking } =
     useGpsTracker({
       intervalMs: 10000,
+      driveId,
       onPoints: handleGpsPoints,
     });
 
   const driveSession = activeDrive.data;
-  const elapsed = useDriveElapsed(driveSession?.startedAt ?? null);
+  const elapsed = useDriveElapsed(driveSession?.startedAt ?? localStartedAt);
   const existingRoute = (driveSession?.route ?? []) as unknown as GpsPoint[];
   const allRoutePoints = [...existingRoute, ...routePoints];
 
@@ -120,7 +157,7 @@ export default function DrivePage() {
   }
 
   const handleMapClick = (lat: number, lng: number) => {
-    if (driveSession) {
+    if (driveSession ?? localDriveId) {
       setSightingLocation({ lat, lng });
     }
   };
@@ -128,8 +165,22 @@ export default function DrivePage() {
   const handleStartDrive = async () => {
     setMutationError(null);
     setStarting(true);
+    void clearPersistedBuffer();
+
+    if (!navigator.onLine) {
+      const tempId = generateTempId();
+      const now = new Date().toISOString();
+      setLocalDriveId(tempId);
+      setLocalStartedAt(now);
+      void setLocalDrive({ id: tempId, startedAt: now, routePoints: [], sightings: [] });
+      void enqueue("drive.start", { tempId });
+      startTracking();
+      setStarting(false);
+      return;
+    }
+
     try {
-      await startDrive.mutateAsync();
+      await startDriveMutation.mutateAsync();
       startTracking();
       await utils.drive.active.invalidate();
     } catch (err) {
@@ -141,8 +192,9 @@ export default function DrivePage() {
 
   const handleEndDrive = () => {
     stopTracking();
-    if (driveSession) {
-      endDrive.mutate({ id: driveSession.id });
+    const id = driveSession?.id ?? localDriveId;
+    if (id) {
+      offlineEndDrive.mutate({ id });
     }
   };
 
@@ -150,7 +202,7 @@ export default function DrivePage() {
     ? [currentPosition.lat, currentPosition.lng]
     : [-24.25, 31.15];
 
-  const isActive = !!driveSession || starting;
+  const isActive = !!driveSession || !!localDriveId || starting;
 
   return (
     <main className="relative h-screen w-full">
@@ -188,10 +240,10 @@ export default function DrivePage() {
           </div>
         )}
 
-        {sightingLocation && (
+        {sightingLocation && (driveSession?.id ?? localDriveId) && (
           <div className="mx-4 mb-3">
             <SightingForm
-              driveSessionId={driveSession!.id}
+              driveSessionId={(driveSession?.id ?? localDriveId)!}
               latitude={sightingLocation.lat}
               longitude={sightingLocation.lng}
               onComplete={() => {
@@ -214,10 +266,10 @@ export default function DrivePage() {
               </div>
               <button
                 onClick={handleStartDrive}
-                disabled={startDrive.isPending}
+                disabled={startDriveMutation.isPending}
                 className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-green text-lg font-bold text-white shadow-lg transition hover:bg-brand-green-light active:scale-95 disabled:opacity-50"
               >
-                {startDrive.isPending ? (
+                {startDriveMutation.isPending ? (
                   <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
@@ -227,7 +279,7 @@ export default function DrivePage() {
                 )}
               </button>
             </div>
-          ) : starting && !driveSession ? (
+          ) : starting && !driveSession && !localDriveId ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <svg className="h-8 w-8 animate-spin text-brand-green" viewBox="0 0 24 24" fill="none">
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -276,14 +328,14 @@ export default function DrivePage() {
 
                 <button
                   onClick={handleEndDrive}
-                  disabled={endDrive.isPending}
+                  disabled={offlineEndDrive.isPending}
                   className="flex flex-col items-center gap-1 rounded-xl bg-red-50 px-3 py-3 transition active:scale-95 disabled:opacity-50"
                 >
                   <svg className="h-6 w-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
                     <rect x="4" y="4" width="16" height="16" rx="2" />
                   </svg>
                   <span className="text-xs font-semibold text-red-600">
-                    {endDrive.isPending ? "Ending..." : "Finish"}
+                    {offlineEndDrive.isPending ? "Ending..." : "Finish"}
                   </span>
                 </button>
               </div>

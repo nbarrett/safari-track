@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
+import { OfflineIndicator } from "~/app/_components/offline-indicator";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
@@ -44,6 +45,7 @@ export function Nav() {
               <div className="text-xs text-brand-gold/80">Klaserie Private Nature Reserve</div>
             </div>
           )}
+          <OfflineIndicator />
           <div className="flex items-center gap-2">
             {NAV_ITEMS.map((item) => {
               const active =
