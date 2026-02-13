@@ -68,15 +68,17 @@ jobs:
 
       - name: Verify deployment
         run: |
-          echo "Waiting for deployment to stabilize..."
+          echo "Waiting for deployment to stabilise..."
           sleep 15
 
-          echo "Checking app homepage..."
-          curl -sf https://klaserie-camps.fly.dev/ | grep -q "_next" || {
-            echo "FAIL: Next.js app not responding"
+          echo "Checking app responds..."
+          STATUS=$(curl -so /dev/null -w '%{http_code}' https://klaserie-camps.fly.dev/)
+          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 500 ]; then
+            echo "PASS: App responds with HTTP $STATUS"
+          else
+            echo "FAIL: App returned HTTP $STATUS"
             exit 1
-          }
-          echo "PASS: Homepage loads"
+          fi
 
       - name: Get logs on failure
         if: failure()

@@ -81,6 +81,7 @@ export const authConfig = {
       },
     }),
   },
+  trustHost: true,
   pages: {
     signIn: "/auth/signin",
   },
