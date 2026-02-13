@@ -43,15 +43,17 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints }: GpsTrack
   const bufferRef = useRef<GpsPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
   const flushIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onPointsRef = useRef(onPoints);
+  onPointsRef.current = onPoints;
 
   useEffect(() => {
     if (!driveId) return;
     void getPersistedBuffer().then((persisted) => {
       if (persisted.length > 0) {
-        onPoints(persisted);
+        onPointsRef.current(persisted);
       }
     });
-  }, [driveId, onPoints]);
+  }, [driveId]);
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
@@ -73,24 +75,26 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints }: GpsTrack
         bufferRef.current = [...bufferRef.current, point];
       },
       (err) => {
-        setError(err.message);
+        if (err.code === GeolocationPositionError.PERMISSION_DENIED) {
+          setError("Location permission denied");
+        }
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 3000,
-        timeout: 10000,
+        maximumAge: 5000,
+        timeout: 30000,
       },
     );
 
     flushIntervalRef.current = setInterval(() => {
       if (bufferRef.current.length > 0) {
         const points = bufferRef.current;
-        onPoints(points);
+        onPointsRef.current(points);
         void persistBuffer(points);
         bufferRef.current = [];
       }
     }, intervalMs);
-  }, [intervalMs, onPoints]);
+  }, [intervalMs]);
 
   const stopTracking = useCallback(() => {
     if (watchIdRef.current !== null) {
@@ -104,13 +108,13 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints }: GpsTrack
 
     if (bufferRef.current.length > 0) {
       const points = bufferRef.current;
-      onPoints(points);
+      onPointsRef.current(points);
       void persistBuffer(points);
       bufferRef.current = [];
     }
 
     setTracking(false);
-  }, [onPoints]);
+  }, []);
 
   useEffect(() => {
     return () => {

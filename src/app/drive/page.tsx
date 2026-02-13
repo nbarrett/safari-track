@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -84,6 +84,8 @@ export default function DrivePage() {
   const endDriveMutation = api.drive.end.useMutation();
   const addRoutePointsMutation = api.drive.addRoutePoints.useMutation();
 
+  const sendingRef = useRef(false);
+
   const offlineAddRoutePoints = useOfflineMutation({
     path: "drive.addRoutePoints",
     mutationFn: (input: { id: string; points: GpsPoint[] }) =>
@@ -113,19 +115,25 @@ export default function DrivePage() {
     },
   });
 
+  const driveId = activeDrive.data?.id ?? localDriveId;
+  const driveIdRef = useRef(driveId);
+  driveIdRef.current = driveId;
+
   const handleGpsPoints = useCallback(
     (points: GpsPoint[]) => {
       setRoutePoints((prev) => [...prev, ...points]);
       void addLocalRoutePoints(points);
-      const driveId = activeDrive.data?.id ?? localDriveId;
-      if (driveId) {
-        offlineAddRoutePoints.mutate({ id: driveId, points });
-      }
+      const id = driveIdRef.current;
+      if (!id || sendingRef.current) return;
+      sendingRef.current = true;
+      offlineAddRoutePoints
+        .mutateAsync({ id, points })
+        .finally(() => {
+          sendingRef.current = false;
+        });
     },
-    [activeDrive.data, localDriveId, offlineAddRoutePoints],
+    [offlineAddRoutePoints],
   );
-
-  const driveId = activeDrive.data?.id ?? localDriveId;
 
   const { tracking, error: gpsError, currentPosition, startTracking, stopTracking } =
     useGpsTracker({
@@ -180,9 +188,13 @@ export default function DrivePage() {
     }
 
     try {
-      await startDriveMutation.mutateAsync();
+      const created = await startDriveMutation.mutateAsync();
+      const startedIso = created.startedAt.toISOString();
+      setLocalDriveId(created.id);
+      setLocalStartedAt(startedIso);
+      void setLocalDrive({ id: created.id, startedAt: startedIso, routePoints: [], sightings: [] });
       startTracking();
-      await utils.drive.active.invalidate();
+      void utils.drive.active.invalidate();
     } catch (err) {
       setMutationError(err instanceof Error ? err.message : "Failed to start drive");
     } finally {
