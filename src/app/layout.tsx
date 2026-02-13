@@ -22,6 +22,12 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 const geist = Geist({
   subsets: ["latin"],
   variable: "--font-geist-sans",
