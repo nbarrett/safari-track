@@ -28,9 +28,6 @@ ENV SKIP_ENV_VALIDATION=1
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
-RUN cp -rL node_modules/.pnpm/prisma@*/node_modules/@prisma/engines node_modules/@prisma/engines && \
-    cp -rL node_modules/.pnpm/prisma@*/node_modules/@prisma/config node_modules/@prisma/config
-
 FROM node:22-slim AS runner
 WORKDIR /app
 
@@ -50,9 +47,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder /app/generated ./generated
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/scripts ./scripts
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 
 RUN chown -R nextjs:nodejs /app
 
