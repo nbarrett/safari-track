@@ -1,6 +1,9 @@
 app = "klaserie-camps"
 primary_region = "jnb"
 
+[deploy]
+  release_command = "sh scripts/deploy-release.sh"
+
 [env]
   PORT = "8080"
 
