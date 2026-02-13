@@ -56,7 +56,7 @@ The species checklist is also browsable by anyone without signing in.
 ### Authentication & Roles
 - Email/password login per guide
 - Roles: `ADMIN`, `GUIDE`, `VIEWER`
-- Each user belongs to a lodge (Nzumba, Kitara, or Dundee)
+- Each user belongs to a lodge (Nzumba, Last Word Kitara, or Dundee)
 
 ## Getting Started
 
@@ -122,7 +122,7 @@ Default admin credentials:
 - **Password:** `admin123`
 
 The seed creates:
-- 3 lodges (Nzumba Camp, Kitara Camp, Dundee Camp)
+- 3 lodges (Nzumba Camp, Last Word Kitara, Dundee Camp)
 - 243 species (mammals, birds, reptiles)
 - 1 admin user assigned to Nzumba Camp
 
@@ -244,5 +244,5 @@ All three camps are in the north-west sector of the Klaserie Private Nature Rese
 | Camp | Latitude | Longitude |
 |------|----------|-----------|
 | Nzumba Camp | -24.1925 | 31.0742 |
-| Kitara Camp | -24.2048 | 31.0831 |
+| Last Word Kitara | -24.2048 | 31.0831 |
 | Dundee Camp | -24.1812 | 31.0654 |

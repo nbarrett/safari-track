@@ -35,7 +35,8 @@ export function LandingPage() {
             </h2>
             <p className="text-sm leading-relaxed text-white/70">
               GPS-tracked game drives, wildlife sighting logs, and a personal
-              species checklist for guides at Nzumba, Kitara, and Dundee camps.
+              species checklist for guides at Nzumba, Last Word Kitara, and
+              Dundee camps.
             </p>
           </div>
 

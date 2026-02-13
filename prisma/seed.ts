@@ -267,7 +267,7 @@ async function main() {
       longitude: 31.0742,
     },
     {
-      name: "Kitara Camp",
+      name: "Last Word Kitara",
       latitude: -24.2048,
       longitude: 31.0831,
     },
