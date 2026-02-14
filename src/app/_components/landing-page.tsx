@@ -3,6 +3,24 @@
 import Image from "next/image";
 import Link from "next/link";
 
+const FEATURES = [
+  {
+    emoji: "🗺️",
+    title: "GPS Game Drives",
+    description: "Track your game drives with live GPS mapping and route recording.",
+  },
+  {
+    emoji: "🦁",
+    title: "Wildlife Sightings",
+    description: "Log sightings with photos, GPS coordinates, and species details.",
+  },
+  {
+    emoji: "✅",
+    title: "Species Checklist",
+    description: "Build your personal checklist of species spotted in the reserve.",
+  },
+];
+
 export function LandingPage() {
   return (
     <main
@@ -40,6 +58,23 @@ export function LandingPage() {
             </p>
           </div>
 
+          <div className="grid grid-cols-1 gap-3">
+            {FEATURES.map((feature) => (
+              <div
+                key={feature.title}
+                className="rounded-lg bg-white/10 p-4 text-left backdrop-blur-sm"
+              >
+                <div className="mb-1 text-lg">
+                  <span className="mr-2">{feature.emoji}</span>
+                  <span className="font-medium text-white">{feature.title}</span>
+                </div>
+                <p className="text-xs leading-relaxed text-white/60">
+                  {feature.description}
+                </p>
+              </div>
+            ))}
+          </div>
+
           <div className="space-y-3">
             <Link
               href="/auth/signin"
@@ -48,10 +83,16 @@ export function LandingPage() {
               Sign In
             </Link>
             <Link
+              href="/lodges"
+              className="block w-full rounded-lg border border-white/30 px-6 py-3 text-center font-medium text-white transition hover:bg-white/10"
+            >
+              Explore Our Camps
+            </Link>
+            <Link
               href="/checklist"
               className="block w-full rounded-lg border border-white/30 px-6 py-3 text-center font-medium text-white transition hover:bg-white/10"
             >
-              View Species Checklist
+              Species Checklist
             </Link>
           </div>
         </div>

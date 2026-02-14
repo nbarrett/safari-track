@@ -4,6 +4,18 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const userRouter = createTRPCRouter({
+    checkName: publicProcedure
+        .input(z.object({ name: z.string().min(1).trim() }))
+        .query(async ({ ctx, input }) => {
+            const existing = await ctx.db.user.findFirst({
+                where: { name: { equals: input.name, mode: "insensitive" } },
+            });
+            return {
+                available: !existing,
+                existingUser: !!existing,
+            };
+        }),
+
     register: publicProcedure
         .input(
             z.object({

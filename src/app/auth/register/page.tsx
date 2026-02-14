@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 
 export default function RegisterPage() {
@@ -14,9 +14,24 @@ export default function RegisterPage() {
   const [lodgeId, setLodgeId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [debouncedName, setDebouncedName] = useState("");
 
   const lodges = api.lodge.list.useQuery();
   const register = api.user.register.useMutation();
+
+  const nameCheck = api.user.checkName.useQuery(
+    { name: debouncedName },
+    { enabled: debouncedName.length >= 1 },
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedName(name.trim());
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [name]);
+
+  const nameTaken = nameCheck.data?.existingUser && !nameCheck.data?.available;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +104,20 @@ export default function RegisterPage() {
               className="mt-1 block w-full rounded-md border border-brand-khaki/30 bg-white px-3 py-2 text-base text-brand-dark focus:border-brand-gold focus:outline-none"
               placeholder="Your first name"
             />
+            {nameTaken && (
+              <div className="mt-2 rounded-md bg-amber-50 p-3 text-sm text-amber-800">
+                <p>Someone with that name is already registered. Is that you?</p>
+                <Link
+                  href="/auth/signin"
+                  className="mt-1 inline-block font-medium text-brand-brown underline hover:text-brand-brown/80"
+                >
+                  Sign in instead
+                </Link>
+                <p className="mt-2 text-xs text-amber-600">
+                  If you&apos;re a different person, add your last name initial (e.g. &quot;{name.trim()} B&quot;) to continue.
+                </p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -130,7 +159,7 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={loading || !lodgeId}
+            disabled={loading || !lodgeId || !!nameTaken}
             className="w-full rounded-md bg-brand-brown px-4 py-2.5 text-sm font-medium text-white transition hover:bg-brand-brown/90 disabled:opacity-50"
           >
             {loading ? "Creating account..." : "Register"}

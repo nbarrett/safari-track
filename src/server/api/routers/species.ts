@@ -1,6 +1,8 @@
 import { z } from "zod";
 
+import { TRPCError } from "@trpc/server";
 import {
+  adminProcedure,
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
@@ -53,5 +55,34 @@ export const speciesRouter = createTRPCRouter({
         orderBy: { commonName: "asc" },
         take: 20,
       });
+    }),
+
+  update: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        commonName: z.string().min(1).optional(),
+        scientificName: z.string().optional(),
+        category: z.string().min(1).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      return ctx.db.species.update({ where: { id }, data });
+    }),
+
+  delete: adminProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const sightingCount = await ctx.db.sighting.count({
+        where: { speciesId: input.id },
+      });
+      if (sightingCount > 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: `Cannot delete: ${sightingCount} sighting(s) reference this species.`,
+        });
+      }
+      return ctx.db.species.delete({ where: { id: input.id } });
     }),
 });
