@@ -40,10 +40,19 @@ export default function LodgesPage() {
                   />
                 </div>
                 <div className="flex flex-col justify-center p-6 sm:p-8">
+                  <Image
+                    src={lodge.brand.logoUrl}
+                    alt={lodge.brand.name}
+                    width={160}
+                    height={64}
+                    unoptimized
+                    className="mb-3 h-10 w-auto object-contain object-left"
+                    style={lodge.brand.logoLight ? { filter: "brightness(0)" } : undefined}
+                  />
                   <h2 className="text-2xl font-bold text-brand-dark group-hover:text-brand-brown">
                     {lodge.name}
                   </h2>
-                  <p className="mt-1 text-sm font-medium text-brand-gold">
+                  <p className="mt-1 text-sm font-medium" style={{ color: lodge.brand.accentColour }}>
                     {lodge.tagline}
                   </p>
                   <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-brand-dark/70">
@@ -53,7 +62,8 @@ export default function LodgesPage() {
                     {lodge.highlights.slice(0, 3).map((h) => (
                       <span
                         key={h}
-                        className="rounded-full bg-brand-cream px-3 py-1 text-xs font-medium text-brand-brown"
+                        className="rounded-full px-3 py-1 text-xs font-medium"
+                        style={{ backgroundColor: `${lodge.brand.accentColour}15`, color: lodge.brand.accentColour }}
                       >
                         {h}
                       </span>

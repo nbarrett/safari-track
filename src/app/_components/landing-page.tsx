@@ -31,9 +31,9 @@ export function LandingPage() {
           <Image
             src="/logo-icon.png"
             alt="Safari Track"
-            width={120}
-            height={120}
-            className="mb-4 rounded-2xl shadow-lg"
+            width={360}
+            height={240}
+            className="mb-4 w-64 shadow-lg drop-shadow-xl"
           />
           <h1 className="text-4xl font-light tracking-wide text-white">
             Safari Track

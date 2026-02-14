@@ -277,7 +277,7 @@ export default function DrivePage() {
       />
 
       {isActive && (
-        <div className="absolute inset-x-0 top-0 z-[1000] flex items-center justify-center gap-6 bg-brand-dark/80 px-4 py-3 backdrop-blur-sm">
+        <div className="absolute left-1/2 top-0 z-[1000] flex w-full max-w-lg -translate-x-1/2 items-center justify-center gap-6 rounded-b-2xl bg-brand-dark/80 px-4 py-3 backdrop-blur-sm">
           <div className="flex items-center gap-2">
             <div className={`h-3 w-3 rounded-full ${tracking ? "animate-pulse bg-brand-green" : "bg-brand-gold"}`} />
             <span className="text-sm font-medium text-white">
@@ -294,15 +294,9 @@ export default function DrivePage() {
         </div>
       )}
 
-      <div className="absolute bottom-0 left-1/2 z-[1000] w-full max-w-lg -translate-x-1/2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-        {(gpsError ?? mutationError) && (
-          <div className="mx-4 mb-2 rounded-lg bg-red-700/90 px-4 py-2 text-sm text-white backdrop-blur-sm">
-            {mutationError ?? gpsError}
-          </div>
-        )}
-
+      <div className="absolute bottom-0 left-1/2 z-[1000] w-full max-w-lg -translate-x-1/2 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         {isActive && !starting && (driveSession?.id ?? localDriveId) && (
-          <div className="mx-4 mb-3">
+          <div className="mb-3">
             {panelExpanded ? (
               <QuickSightingPanel
                 driveSessionId={(driveSession?.id ?? localDriveId)!}
@@ -332,7 +326,7 @@ export default function DrivePage() {
           </div>
         )}
 
-        <div className="mx-4">
+        <div>
           {!isActive ? (
             <div className="flex flex-col items-center gap-4 rounded-2xl bg-white/95 p-6 shadow-xl backdrop-blur-sm">
               <div className="text-center">

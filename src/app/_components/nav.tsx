@@ -22,6 +22,8 @@ const NAV_ITEMS = [
   { href: "/admin/settings", label: "Settings", adminOnly: true },
 ] as const;
 
+const HIDE_MOBILE_BAR = ["/drive"];
+
 export function Nav() {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -64,9 +66,11 @@ export function Nav() {
     return true;
   });
 
+  const hideMobileBar = HIDE_MOBILE_BAR.includes(pathname);
+
   return (
     <>
-      <nav className="sticky top-0 z-50 border-b border-white/10 bg-brand-brown/95 backdrop-blur-sm">
+      <nav className="sticky top-0 z-50 hidden border-b border-white/10 bg-brand-brown/95 backdrop-blur-sm lg:block">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex-shrink-0">
@@ -75,12 +79,12 @@ export function Nav() {
                 alt="Safari Track"
                 width={240}
                 height={112}
-                className="h-8 w-auto lg:h-10"
+                className="h-14 w-auto"
                 priority
               />
             </Link>
             {lodge.data && (
-              <div className="hidden border-l border-white/20 pl-6 lg:block">
+              <div className="border-l border-white/20 pl-6">
                 {lodge.data.brand && (
                   <div className="text-xs font-medium uppercase tracking-wider text-white/50">{lodge.data.brand}</div>
                 )}
@@ -89,7 +93,7 @@ export function Nav() {
             )}
             <OfflineIndicator />
             <PrecacheIndicator />
-            <div className="hidden items-center gap-2 lg:flex">
+            <div className="flex items-center gap-2">
               {visibleItems.map((item) => {
                 const active =
                   item.href === "/"
@@ -114,31 +118,51 @@ export function Nav() {
           {session ? (
             <button
               onClick={() => void handleSignOut()}
-              className="hidden rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white lg:block"
+              className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
             >
               Sign Out
             </button>
           ) : (
             <Link
               href="/auth/signin"
-              className="hidden rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white lg:block"
+              className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
             >
               Sign In
             </Link>
           )}
-          <button
-            onClick={() => setMenuOpen(true)}
-            className="p-2 text-white lg:hidden"
-            aria-label="Open menu"
-          >
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-          </button>
         </div>
       </nav>
+
+      {!hideMobileBar && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/10 bg-brand-brown/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-sm lg:hidden">
+          <div className="flex items-center justify-between px-4 py-1">
+            <Link href="/" className="flex-shrink-0">
+              <Image
+                src="/logo-icon.png"
+                alt="Safari Track"
+                width={240}
+                height={112}
+                className="h-10 w-auto"
+              />
+            </Link>
+            <div className="flex items-center gap-3">
+              <OfflineIndicator />
+              <PrecacheIndicator />
+              <button
+                onClick={() => setMenuOpen(true)}
+                className="p-2 text-white"
+                aria-label="Open menu"
+              >
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <line x1="3" y1="6" x2="21" y2="6" />
+                  <line x1="3" y1="12" x2="21" y2="12" />
+                  <line x1="3" y1="18" x2="21" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </nav>
+      )}
 
       <div
         className={`fixed inset-0 z-[9999] flex flex-col bg-brand-brown transition-opacity duration-200 lg:hidden ${
@@ -199,7 +223,7 @@ export function Nav() {
               );
             })}
           </div>
-          <div className="flex items-center justify-between border-t border-white/10 py-6">
+          <div className="flex items-center justify-between border-t border-white/10 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             <OfflineIndicator />
             <PrecacheIndicator />
             {session ? (

@@ -72,9 +72,9 @@ export default function SignInPage() {
             <Image
               src="/logo-icon.png"
               alt="Safari Track"
-              width={320}
-              height={320}
-              className="mb-4 w-40 rounded-3xl"
+              width={360}
+              height={240}
+              className="mb-4 w-56"
               priority
             />
             <h1 className="text-2xl font-semibold tracking-wide text-brand-dark">Safari Track</h1>
