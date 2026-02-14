@@ -6,10 +6,12 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { api } from "~/trpc/react";
 import { useGpsTracker, clearPersistedBuffer } from "~/app/_components/gps-tracker";
-import { SightingForm } from "~/app/_components/sighting-form";
+import { QuickSightingPanel } from "~/app/_components/quick-sighting";
+import { TripSummary } from "~/app/_components/trip-summary";
 import { useOfflineMutation } from "~/lib/use-offline-mutation";
 import { generateTempId, enqueue } from "~/lib/offline-queue";
 import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints } from "~/lib/drive-store";
+import { getActiveTrip, addDriveToTrip, setActiveTrip, type TripSpecies } from "~/lib/trip-store";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
@@ -20,6 +22,15 @@ interface GpsPoint {
   lat: number;
   lng: number;
   timestamp: string;
+}
+
+interface QuickSpecies {
+  speciesId: string;
+  commonName: string;
+  category: string;
+  imageUrl: string | null;
+  count: number;
+  lastSightedAt: number;
 }
 
 function formatDuration(seconds: number): string {
@@ -58,11 +69,14 @@ function useDriveElapsed(startedAt: Date | string | null) {
 export default function DrivePage() {
   const { data: session, status } = useSession();
   const [routePoints, setRoutePoints] = useState<GpsPoint[]>([]);
-  const [sightingLocation, setSightingLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [localDriveId, setLocalDriveId] = useState<string | null>(null);
   const [localStartedAt, setLocalStartedAt] = useState<string | null>(null);
+  const [showStartModal, setShowStartModal] = useState(false);
+  const [showTripSummary, setShowTripSummary] = useState(false);
+  const [initialQuickSpecies, setInitialQuickSpecies] = useState<QuickSpecies[]>([]);
+  const [hasActiveTrip, setHasActiveTrip] = useState(false);
 
   const utils = api.useUtils();
 
@@ -73,6 +87,9 @@ export default function DrivePage() {
         setLocalStartedAt(drive.startedAt);
         setRoutePoints(drive.routePoints);
       }
+    });
+    void getActiveTrip().then((trip) => {
+      setHasActiveTrip(!!trip);
     });
   }, []);
 
@@ -100,6 +117,7 @@ export default function DrivePage() {
       setMutationError(null);
       setLocalDriveId(null);
       setLocalStartedAt(null);
+      setInitialQuickSpecies([]);
       void clearLocalDrive();
       void clearPersistedBuffer();
       void utils.drive.active.invalidate();
@@ -110,6 +128,7 @@ export default function DrivePage() {
       setRoutePoints([]);
       setLocalDriveId(null);
       setLocalStartedAt(null);
+      setInitialQuickSpecies([]);
       void clearLocalDrive();
       void clearPersistedBuffer();
     },
@@ -164,13 +183,30 @@ export default function DrivePage() {
     redirect("/auth/signin");
   }
 
-  const handleMapClick = (lat: number, lng: number) => {
-    if (driveSession ?? localDriveId) {
-      setSightingLocation({ lat, lng });
-    }
+  const handleStartFresh = async () => {
+    setShowStartModal(false);
+    setInitialQuickSpecies([]);
+    await startDriveFlow();
   };
 
-  const handleStartDrive = async () => {
+  const handleContinueTrip = async () => {
+    setShowStartModal(false);
+    const trip = await getActiveTrip();
+    if (trip) {
+      const continued: QuickSpecies[] = trip.species.map((s: TripSpecies) => ({
+        speciesId: s.speciesId,
+        commonName: s.commonName,
+        category: s.category,
+        imageUrl: s.imageUrl,
+        count: 0,
+        lastSightedAt: s.lastSightedAt,
+      }));
+      setInitialQuickSpecies(continued);
+    }
+    await startDriveFlow();
+  };
+
+  const startDriveFlow = async () => {
     setMutationError(null);
     setStarting(true);
     void clearPersistedBuffer();
@@ -182,6 +218,8 @@ export default function DrivePage() {
       setLocalStartedAt(now);
       void setLocalDrive({ id: tempId, startedAt: now, routePoints: [], sightings: [] });
       void enqueue("drive.start", { tempId });
+      void addDriveToTrip(tempId);
+      setHasActiveTrip(true);
       startTracking();
       setStarting(false);
       return;
@@ -193,12 +231,22 @@ export default function DrivePage() {
       setLocalDriveId(created.id);
       setLocalStartedAt(startedIso);
       void setLocalDrive({ id: created.id, startedAt: startedIso, routePoints: [], sightings: [] });
+      void addDriveToTrip(created.id);
+      setHasActiveTrip(true);
       startTracking();
       void utils.drive.active.invalidate();
     } catch (err) {
       setMutationError(err instanceof Error ? err.message : "Failed to start drive");
     } finally {
       setStarting(false);
+    }
+  };
+
+  const handleStartDrive = () => {
+    if (hasActiveTrip) {
+      setShowStartModal(true);
+    } else {
+      void handleStartFresh();
     }
   };
 
@@ -223,7 +271,6 @@ export default function DrivePage() {
         zoom={15}
         route={allRoutePoints}
         sightings={sightingMarkers}
-        onMapClick={isActive ? handleMapClick : undefined}
         className="h-full w-full"
       />
 
@@ -252,17 +299,13 @@ export default function DrivePage() {
           </div>
         )}
 
-        {sightingLocation && (driveSession?.id ?? localDriveId) && (
+        {isActive && !starting && (driveSession?.id ?? localDriveId) && (
           <div className="mx-4 mb-3">
-            <SightingForm
+            <QuickSightingPanel
               driveSessionId={(driveSession?.id ?? localDriveId)!}
-              latitude={sightingLocation.lat}
-              longitude={sightingLocation.lng}
-              onComplete={() => {
-                setSightingLocation(null);
-                void utils.drive.active.invalidate();
-              }}
-              onCancel={() => setSightingLocation(null)}
+              currentPosition={currentPosition}
+              initialSpecies={initialQuickSpecies}
+              onSightingLogged={() => void utils.drive.active.invalidate()}
             />
           </div>
         )}
@@ -276,20 +319,32 @@ export default function DrivePage() {
                   Track your route and log wildlife sightings
                 </p>
               </div>
-              <button
-                onClick={handleStartDrive}
-                disabled={startDriveMutation.isPending}
-                className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-green text-lg font-bold text-white shadow-lg transition hover:bg-brand-green-light active:scale-95 disabled:opacity-50"
-              >
-                {startDriveMutation.isPending ? (
-                  <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                ) : (
-                  "GO"
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={handleStartDrive}
+                  disabled={startDriveMutation.isPending}
+                  className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-green text-lg font-bold text-white shadow-lg transition hover:bg-brand-green-light active:scale-95 disabled:opacity-50"
+                >
+                  {startDriveMutation.isPending ? (
+                    <svg className="h-6 w-6 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                  ) : (
+                    "GO"
+                  )}
+                </button>
+                {hasActiveTrip && (
+                  <button
+                    onClick={() => setShowTripSummary(true)}
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-gold/20 transition active:scale-95"
+                  >
+                    <svg className="h-6 w-6 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
           ) : starting && !driveSession && !localDriveId ? (
             <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/95 p-6 shadow-xl backdrop-blur-sm">
@@ -301,7 +356,7 @@ export default function DrivePage() {
             </div>
           ) : (
             <div className="rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {tracking ? (
                   <button
                     onClick={stopTracking}
@@ -326,17 +381,16 @@ export default function DrivePage() {
                 )}
 
                 <button
-                  onClick={() => {
-                    const pos = currentPosition ?? { lat: mapCenter[0], lng: mapCenter[1] };
-                    setSightingLocation(pos);
-                  }}
-                  className="flex flex-col items-center gap-1 rounded-xl bg-brand-brown/10 px-3 py-3 transition active:scale-95"
+                  onClick={() => setShowTripSummary(true)}
+                  className="flex flex-col items-center gap-1 rounded-xl bg-brand-gold/10 px-3 py-3 transition active:scale-95"
                 >
-                  <svg className="h-6 w-6 text-brand-brown" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  <svg className="h-6 w-6 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
-                  <span className="text-xs font-semibold text-brand-brown">Sighting</span>
+                  <span className="text-xs font-semibold text-brand-gold">Trip</span>
                 </button>
+
+                <div />
 
                 <button
                   onClick={handleEndDrive}
@@ -355,6 +409,48 @@ export default function DrivePage() {
           )}
         </div>
       </div>
+
+      {showStartModal && (
+        <div className="absolute inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-6 w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-bold text-brand-dark">Start New Drive</h3>
+            <p className="mt-2 text-sm text-brand-khaki">
+              You have an active trip. Would you like to continue it or start fresh?
+            </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <button
+                onClick={() => void handleContinueTrip()}
+                className="w-full rounded-xl bg-brand-green py-3 text-sm font-bold text-white transition active:scale-95"
+              >
+                Continue Trip
+              </button>
+              <button
+                onClick={() => void handleStartFresh()}
+                className="w-full rounded-xl bg-brand-cream py-3 text-sm font-bold text-brand-dark transition active:scale-95"
+              >
+                Start Fresh
+              </button>
+              <button
+                onClick={() => setShowStartModal(false)}
+                className="text-sm text-brand-khaki"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTripSummary && (
+        <div className="absolute inset-0 z-[2000] flex items-end justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 mb-[calc(2rem+env(safe-area-inset-bottom))] w-full max-w-lg">
+            <TripSummary onClose={() => {
+              setShowTripSummary(false);
+              void getActiveTrip().then((trip) => setHasActiveTrip(!!trip));
+            }} />
+          </div>
+        </div>
+      )}
     </main>
   );
 }
