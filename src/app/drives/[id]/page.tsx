@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
+import { OfflineImage } from "~/app/_components/offline-image";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
@@ -122,11 +123,12 @@ export default function DriveDetailPage() {
               </h2>
               <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {photos.map((photo, i) => (
-                  <div key={i} className="overflow-hidden rounded-lg bg-white/90 shadow-sm backdrop-blur">
-                    <img
+                  <div key={i} className="relative overflow-hidden rounded-lg bg-white/90 shadow-sm backdrop-blur">
+                    <OfflineImage
                       src={photo.url}
                       alt={photo.caption ?? `Drive photo ${i + 1}`}
                       className="aspect-square w-full object-cover"
+                      placeholderClassName="aspect-square w-full"
                     />
                     {photo.caption && (
                       <div className="px-2 py-1 text-xs text-brand-dark">{photo.caption}</div>

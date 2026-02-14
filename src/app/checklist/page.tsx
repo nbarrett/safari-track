@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
+import { OfflineImage } from "~/app/_components/offline-image";
 import { precacheSpeciesImages } from "~/lib/precache-images";
 import { useOfflineMutation } from "~/lib/use-offline-mutation";
 
@@ -365,23 +366,15 @@ export default function ChecklistPage() {
                           </div>
                         )}
                       </div>
-                      {item.imageUrl ? (
-                        <button
-                          onClick={() => setExpandedImage({ url: item.imageUrl!, name: item.commonName })}
-                          className="block w-full"
-                        >
-                          <img
-                            src={item.imageUrl}
-                            alt={item.commonName}
-                            crossOrigin="anonymous"
-                            className="aspect-square w-full object-cover transition hover:scale-105"
-                          />
-                        </button>
-                      ) : (
-                        <div className="flex aspect-square items-center justify-center bg-brand-cream/50 text-sm text-brand-khaki">
-                          No image
-                        </div>
-                      )}
+                      <div className="relative">
+                        <OfflineImage
+                          src={item.imageUrl}
+                          alt={item.commonName}
+                          className="aspect-square w-full object-cover transition hover:scale-105"
+                          placeholderClassName="aspect-square w-full"
+                          onClick={item.imageUrl ? () => setExpandedImage({ url: item.imageUrl!, name: item.commonName }) : undefined}
+                        />
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -440,17 +433,15 @@ export default function ChecklistPage() {
                               </div>
                             </button>
                             {item.imageUrl ? (
-                              <button
-                                onClick={() => setExpandedImage({ url: item.imageUrl!, name: item.commonName })}
-                                className="shrink-0 ml-2"
-                              >
-                                <img
+                              <div className="relative shrink-0 ml-2">
+                                <OfflineImage
                                   src={item.imageUrl}
                                   alt={item.commonName}
-                                  crossOrigin="anonymous"
                                   className={`${thumbSize === "sm" ? "h-12 w-12" : thumbSize === "lg" ? "h-20 w-20" : "h-32 w-32"} rounded-xl object-cover shadow-sm transition hover:scale-105 hover:shadow-md`}
+                                  placeholderClassName={`${thumbSize === "sm" ? "h-12 w-12" : thumbSize === "lg" ? "h-20 w-20" : "h-32 w-32"} rounded-xl`}
+                                  onClick={() => setExpandedImage({ url: item.imageUrl!, name: item.commonName })}
                                 />
-                              </button>
+                              </div>
                             ) : null}
                           </div>
                         ) : (
@@ -465,17 +456,15 @@ export default function ChecklistPage() {
                               </div>
                             </div>
                             {item.imageUrl ? (
-                              <button
-                                onClick={() => setExpandedImage({ url: item.imageUrl!, name: item.commonName })}
-                                className="shrink-0 ml-2"
-                              >
-                                <img
+                              <div className="relative shrink-0 ml-2">
+                                <OfflineImage
                                   src={item.imageUrl}
                                   alt={item.commonName}
-                                  crossOrigin="anonymous"
                                   className={`${thumbSize === "sm" ? "h-12 w-12" : thumbSize === "lg" ? "h-20 w-20" : "h-32 w-32"} rounded-xl object-cover shadow-sm transition hover:scale-105 hover:shadow-md`}
+                                  placeholderClassName={`${thumbSize === "sm" ? "h-12 w-12" : thumbSize === "lg" ? "h-20 w-20" : "h-32 w-32"} rounded-xl`}
+                                  onClick={() => setExpandedImage({ url: item.imageUrl!, name: item.commonName })}
                                 />
-                              </button>
+                              </div>
                             ) : null}
                           </div>
                         ),
@@ -505,12 +494,14 @@ export default function ChecklistPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
-            <img
-              src={expandedImage.url.replace(/\/\d+px-/, "/800px-")}
-              alt={expandedImage.name}
-              crossOrigin="anonymous"
-              className="max-h-[70vh] w-full object-contain"
-            />
+            <div className="relative">
+              <OfflineImage
+                src={expandedImage.url.replace(/\/\d+px-/, "/800px-")}
+                alt={expandedImage.name}
+                className="max-h-[70vh] w-full object-contain"
+                placeholderClassName="flex h-64 w-full"
+              />
+            </div>
             <div className="px-4 py-3 text-center">
               <span className="text-sm font-semibold text-brand-dark">{expandedImage.name}</span>
             </div>

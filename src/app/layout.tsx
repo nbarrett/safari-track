@@ -8,6 +8,7 @@ import { AuthSessionProvider } from "~/app/_components/session-provider";
 import { Nav } from "~/app/_components/nav";
 import { SafariPrompt } from "~/app/_components/safari-prompt";
 import { SwProvider } from "~/app/_components/sw-provider";
+import { SyncIndicator } from "~/app/_components/sync-indicator";
 
 export const metadata: Metadata = {
   title: "Klaserie Camps",
@@ -50,6 +51,7 @@ export default function RootLayout({
               <SafariPrompt />
               <Nav />
               {children}
+              <SyncIndicator />
             </SwProvider>
           </TRPCReactProvider>
         </AuthSessionProvider>
