@@ -61,6 +61,8 @@ export const authConfig = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 90 * 24 * 60 * 60,
+    updateAge: 24 * 60 * 60,
   },
   callbacks: {
     jwt: ({ token, user }) => {
