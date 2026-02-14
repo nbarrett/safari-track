@@ -48,7 +48,7 @@ export default function RegisterPage() {
 
   return (
     <main className="relative flex min-h-screen items-center justify-center px-4">
-      <div className="absolute inset-0 z-0">
+      <div className="pointer-events-none absolute inset-0 z-0">
         <Image
           src="/hero-rhinos.webp"
           alt="Klaserie wildlife"
@@ -87,7 +87,7 @@ export default function RegisterPage() {
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-brand-khaki/30 px-3 py-2 focus:border-brand-gold focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-brand-khaki/30 bg-white px-3 py-2 text-base text-brand-dark focus:border-brand-gold focus:outline-none"
               placeholder="Your first name"
             />
           </div>
@@ -103,7 +103,7 @@ export default function RegisterPage() {
               minLength={4}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-brand-khaki/30 px-3 py-2 focus:border-brand-gold focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-brand-khaki/30 bg-white px-3 py-2 text-base text-brand-dark focus:border-brand-gold focus:outline-none"
             />
           </div>
 
@@ -116,7 +116,7 @@ export default function RegisterPage() {
               required
               value={lodgeId}
               onChange={(e) => setLodgeId(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-brand-khaki/30 bg-white px-3 py-2 focus:border-brand-gold focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-brand-khaki/30 bg-white px-3 py-2 text-base text-brand-dark focus:border-brand-gold focus:outline-none"
             >
               <option value="" disabled>
                 Select your lodge
