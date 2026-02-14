@@ -13,7 +13,7 @@ import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints } fr
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
-  { ssr: false, loading: () => <div className="flex h-screen items-center justify-center bg-brand-cream">Loading map...</div> },
+  { ssr: false, loading: () => <div className="flex flex-1 items-center justify-center bg-brand-cream">Loading map...</div> },
 );
 
 interface GpsPoint {
@@ -157,7 +157,7 @@ export default function DrivePage() {
   }));
 
   if (status === "loading") {
-    return <div className="flex h-screen items-center justify-center text-brand-khaki">Loading...</div>;
+    return <div className="flex flex-1 items-center justify-center text-brand-khaki">Loading...</div>;
   }
 
   if (!session) {
@@ -217,7 +217,7 @@ export default function DrivePage() {
   const isActive = !!driveSession || !!localDriveId || starting;
 
   return (
-    <main className="relative h-screen w-full">
+    <main className="relative min-h-0 flex-1">
       <DriveMap
         center={mapCenter}
         zoom={15}
