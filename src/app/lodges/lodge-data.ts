@@ -1,3 +1,11 @@
+export interface LodgeBrand {
+  name: string;
+  logoUrl: string;
+  logoLight: boolean;
+  accentColour: string;
+  websiteUrl: string;
+}
+
 export interface LodgeShowcase {
   slug: string;
   name: string;
@@ -7,6 +15,7 @@ export interface LodgeShowcase {
   heroImages: string[];
   capacity: string;
   location: string;
+  brand: LodgeBrand;
 }
 
 export const LODGE_DATA: LodgeShowcase[] = [
@@ -26,6 +35,13 @@ export const LODGE_DATA: LodgeShowcase[] = [
     heroImages: ["/hero-elephants.jpg", "/images/mammals.jpg", "/hero-rhinos.webp"],
     capacity: "10 guests in 5 thatched chalets",
     location: "North-western Klaserie Private Nature Reserve",
+    brand: {
+      name: "Klaserie Camps",
+      logoUrl: "https://klaseriecamps.com/wp-content/uploads/2021/03/Untitled-1.png",
+      logoLight: true,
+      accentColour: "#f7ca3b",
+      websiteUrl: "https://klaseriecamps.com/",
+    },
   },
   {
     slug: "kitara",
@@ -47,6 +63,13 @@ export const LODGE_DATA: LodgeShowcase[] = [
     ],
     capacity: "12 guests in 6 luxury suites",
     location: "Klaserie River, Greater Kruger",
+    brand: {
+      name: "The Last Word",
+      logoUrl: "https://cdn.prod.website-files.com/5f9fdaba11f1bd323cd8af8a/5fa5651781f83e2da28083b5_logo-lastword-kitara.svg",
+      logoLight: true,
+      accentColour: "#e19e68",
+      websiteUrl: "https://thelastword.co.za/hotel/kitara",
+    },
   },
 ];
 

@@ -13,10 +13,10 @@ import { PrecacheIndicator } from "~/app/_components/precache-indicator";
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
   { href: "/lodges", label: "Camps" },
-  { href: "/drive", label: "Drive" },
+  { href: "/drive", label: "Drive", authOnly: true },
   { href: "/checklist", label: "Checklist" },
-  { href: "/drives", label: "History" },
-  { href: "/strava", label: "Strava" },
+  { href: "/drives", label: "History", authOnly: true },
+  { href: "/strava", label: "Strava", authOnly: true },
   { href: "/admin/species", label: "Species", adminOnly: true },
   { href: "/admin/roads", label: "Roads", adminOnly: true },
   { href: "/admin/settings", label: "Settings", adminOnly: true },
@@ -58,32 +58,39 @@ export function Nav() {
     };
   }, [menuOpen]);
 
-  if (!session) return null;
+  const visibleItems = NAV_ITEMS.filter((item) => {
+    if ("adminOnly" in item && item.adminOnly) return session?.user?.role === "ADMIN";
+    if ("authOnly" in item && item.authOnly) return !!session;
+    return true;
+  });
 
   return (
     <>
       <nav className="sticky top-0 z-50 border-b border-white/10 bg-brand-brown/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex-shrink-0 py-4">
+            <Link href="/" className="flex-shrink-0">
               <Image
-                src="/logo-white.png"
+                src="/logo-icon.png"
                 alt="Safari Track"
-                width={180}
-                height={104}
-                className="h-[calc(var(--spacing)*14)] w-auto lg:h-[calc(var(--spacing)*21)]"
+                width={240}
+                height={112}
+                className="h-8 w-auto lg:h-10"
                 priority
               />
             </Link>
             {lodge.data && (
               <div className="hidden border-l border-white/20 pl-6 lg:block">
+                {lodge.data.brand && (
+                  <div className="text-xs font-medium uppercase tracking-wider text-white/50">{lodge.data.brand}</div>
+                )}
                 <div className="text-lg font-semibold text-white">{lodge.data.name}</div>
               </div>
             )}
             <OfflineIndicator />
             <PrecacheIndicator />
             <div className="hidden items-center gap-2 lg:flex">
-              {NAV_ITEMS.filter((item) => !("adminOnly" in item && item.adminOnly) || session?.user?.role === "ADMIN").map((item) => {
+              {visibleItems.map((item) => {
                 const active =
                   item.href === "/"
                     ? pathname === "/"
@@ -104,12 +111,21 @@ export function Nav() {
               })}
             </div>
           </div>
-          <button
-            onClick={() => void handleSignOut()}
-            className="hidden rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white lg:block"
-          >
-            Sign Out
-          </button>
+          {session ? (
+            <button
+              onClick={() => void handleSignOut()}
+              className="hidden rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white lg:block"
+            >
+              Sign Out
+            </button>
+          ) : (
+            <Link
+              href="/auth/signin"
+              className="hidden rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white lg:block"
+            >
+              Sign In
+            </Link>
+          )}
           <button
             onClick={() => setMenuOpen(true)}
             className="p-2 text-white lg:hidden"
@@ -133,11 +149,11 @@ export function Nav() {
         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" onClick={closeMenu} className="flex-shrink-0">
             <Image
-              src="/logo-white.png"
+              src="/logo-icon.png"
               alt="Safari Track"
-              width={180}
-              height={104}
-              className="h-[calc(var(--spacing)*14)] w-auto"
+              width={240}
+              height={112}
+              className="h-20 w-auto"
             />
           </Link>
           <button
@@ -155,11 +171,14 @@ export function Nav() {
         <div className="flex flex-1 flex-col px-6">
           {lodge.data && (
             <div className="border-b border-white/10 pb-4">
+              {lodge.data.brand && (
+                <div className="text-xs font-medium uppercase tracking-wider text-white/50">{lodge.data.brand}</div>
+              )}
               <div className="text-lg font-semibold text-white">{lodge.data.name}</div>
             </div>
           )}
           <div className="flex flex-1 flex-col py-4">
-            {NAV_ITEMS.filter((item) => !("adminOnly" in item && item.adminOnly) || session?.user?.role === "ADMIN").map((item) => {
+            {visibleItems.map((item) => {
               const active =
                 item.href === "/"
                   ? pathname === "/"
@@ -183,12 +202,22 @@ export function Nav() {
           <div className="flex items-center justify-between border-t border-white/10 py-6">
             <OfflineIndicator />
             <PrecacheIndicator />
-            <button
-              onClick={() => void handleSignOut()}
-              className="text-lg font-medium text-white/50 transition hover:text-white"
-            >
-              Sign Out
-            </button>
+            {session ? (
+              <button
+                onClick={() => void handleSignOut()}
+                className="text-lg font-medium text-white/50 transition hover:text-white"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                href="/auth/signin"
+                onClick={closeMenu}
+                className="text-lg font-medium text-white/50 transition hover:text-white"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       </div>

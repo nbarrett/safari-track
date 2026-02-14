@@ -56,8 +56,27 @@ export default function LodgeShowcasePage() {
           </div>
         ))}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+        <Link
+          href="/lodges"
+          className="absolute left-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition active:scale-95"
+        >
+          <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+        </Link>
         <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
-          <p className="text-sm font-medium uppercase tracking-widest text-brand-gold">
+          <a href={lodge.brand.websiteUrl} target="_blank" rel="noopener noreferrer" className="mb-4 inline-block">
+            <Image
+              src={lodge.brand.logoUrl}
+              alt={lodge.brand.name}
+              width={200}
+              height={80}
+              unoptimized
+              className="h-12 w-auto sm:h-16"
+              style={lodge.brand.logoLight ? undefined : { filter: "brightness(0) invert(1)" }}
+            />
+          </a>
+          <p className="text-sm font-medium uppercase tracking-widest" style={{ color: lodge.brand.accentColour }}>
             {lodge.location}
           </p>
           <h1 className="mt-2 text-4xl font-bold text-white sm:text-5xl">
@@ -77,13 +96,13 @@ export default function LodgeShowcasePage() {
             </p>
 
             <div className="mt-8">
-              <h2 className="text-sm font-semibold uppercase tracking-wider text-brand-brown">
+              <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: lodge.brand.accentColour }}>
                 Highlights
               </h2>
               <ul className="mt-4 space-y-3">
                 {lodge.highlights.map((h) => (
                   <li key={h} className="flex items-start gap-3">
-                    <svg className="mt-0.5 h-5 w-5 shrink-0 text-brand-gold" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="mt-0.5 h-5 w-5 shrink-0" style={{ color: lodge.brand.accentColour }} fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
                     </svg>
                     <span className="text-brand-dark/80">{h}</span>
@@ -95,7 +114,7 @@ export default function LodgeShowcasePage() {
 
           <div className="space-y-6">
             <div className="rounded-xl bg-white p-6 shadow-sm">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-brand-brown">
+              <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: lodge.brand.accentColour }}>
                 At a glance
               </h3>
               <dl className="mt-4 space-y-3 text-sm">
@@ -116,7 +135,8 @@ export default function LodgeShowcasePage() {
 
             <Link
               href="/drive"
-              className="block rounded-xl bg-brand-brown px-6 py-4 text-center font-semibold text-white shadow-sm transition hover:bg-brand-brown/90"
+              className="block rounded-xl px-6 py-4 text-center font-semibold text-white shadow-sm transition hover:opacity-90"
+              style={{ backgroundColor: lodge.brand.accentColour }}
             >
               Start a Game Drive
             </Link>
@@ -124,7 +144,7 @@ export default function LodgeShowcasePage() {
         </div>
 
         <div className="mt-16 border-t border-brand-khaki/20 pt-12">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-brand-brown">
+          <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: lodge.brand.accentColour }}>
             Explore our other camps
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">

@@ -261,16 +261,19 @@ async function main() {
   const lodges = [
     {
       name: "Nzumba Camp",
+      brand: "Klaserie Camps",
       latitude: -24.1925,
       longitude: 31.0742,
     },
     {
       name: "Last Word Kitara",
+      brand: "The Last Word",
       latitude: -24.2048,
       longitude: 31.0831,
     },
     {
       name: "Dundee Camp",
+      brand: "Klaserie Camps",
       latitude: -24.1812,
       longitude: 31.0654,
     },
@@ -281,6 +284,7 @@ async function main() {
     const lodge = await prisma.lodge.upsert({
       where: { name: lodgeData.name },
       update: {
+        brand: lodgeData.brand,
         latitude: lodgeData.latitude,
         longitude: lodgeData.longitude,
       },

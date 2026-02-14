@@ -97,7 +97,7 @@ function Test-PortInUse {
 }
 
 function Check-Port {
-    $port = if ($env:DEV_PORT) { [int]$env:DEV_PORT } else { 3002 }
+    $port = if ($env:DEV_PORT) { [int]$env:DEV_PORT } else { 3003 }
     if (Test-PortInUse -Host_ "localhost" -Port $port) {
         Throw-Error "Port $port is already in use. Run .\kill-dev.ps1 first or set DEV_PORT to use a different port."
     }
@@ -139,15 +139,15 @@ function Start-DevServer {
 
     if (Test-Path $logPath) { Remove-Item $logPath }
 
-    $job = Start-Job -Name "klaserie-camps-dev" -ScriptBlock {
+    $job = Start-Job -Name "safari-track-dev" -ScriptBlock {
         param($WorkingDir)
         Set-StrictMode -Version Latest
         Set-Location $WorkingDir
         pnpm dev
     } -ArgumentList $RepoRoot
 
-    $port = if ($env:DEV_PORT) { $env:DEV_PORT } else { "3002" }
-    Write-Info "Klaserie Camps dev server -> http://localhost:$port"
+    $port = if ($env:DEV_PORT) { $env:DEV_PORT } else { "3003" }
+    Write-Info "Safari Track dev server -> http://localhost:$port"
     Write-Info "Logs -> $logPath"
     Write-Info "Press Ctrl+C to stop."
 

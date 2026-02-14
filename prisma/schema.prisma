@@ -33,6 +33,7 @@ model User {
 model Lodge {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
   name          String         @unique
+  brand         String?
   latitude      Float
   longitude     Float
   users         User[]

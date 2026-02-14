@@ -77,6 +77,7 @@ export default function DrivePage() {
   const [showTripSummary, setShowTripSummary] = useState(false);
   const [initialQuickSpecies, setInitialQuickSpecies] = useState<QuickSpecies[]>([]);
   const [hasActiveTrip, setHasActiveTrip] = useState(false);
+  const [panelExpanded, setPanelExpanded] = useState(false);
 
   const utils = api.useUtils();
 
@@ -271,6 +272,7 @@ export default function DrivePage() {
         zoom={15}
         route={allRoutePoints}
         sightings={sightingMarkers}
+        currentPosition={currentPosition}
         className="h-full w-full"
       />
 
@@ -292,7 +294,7 @@ export default function DrivePage() {
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 z-[1000] pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+      <div className="absolute bottom-0 left-1/2 z-[1000] w-full max-w-lg -translate-x-1/2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         {(gpsError ?? mutationError) && (
           <div className="mx-4 mb-2 rounded-lg bg-red-700/90 px-4 py-2 text-sm text-white backdrop-blur-sm">
             {mutationError ?? gpsError}
@@ -301,12 +303,32 @@ export default function DrivePage() {
 
         {isActive && !starting && (driveSession?.id ?? localDriveId) && (
           <div className="mx-4 mb-3">
-            <QuickSightingPanel
-              driveSessionId={(driveSession?.id ?? localDriveId)!}
-              currentPosition={currentPosition}
-              initialSpecies={initialQuickSpecies}
-              onSightingLogged={() => void utils.drive.active.invalidate()}
-            />
+            {panelExpanded ? (
+              <QuickSightingPanel
+                driveSessionId={(driveSession?.id ?? localDriveId)!}
+                currentPosition={currentPosition}
+                initialSpecies={initialQuickSpecies}
+                onSightingLogged={() => void utils.drive.active.invalidate()}
+                onCollapse={() => setPanelExpanded(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setPanelExpanded(true)}
+                className="flex w-full items-center gap-2 rounded-2xl bg-white/95 px-3 py-2 shadow-xl backdrop-blur-sm"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-green/20">
+                  <svg className="h-5 w-5 text-brand-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <span className="flex-1 text-left text-sm font-semibold text-brand-dark">
+                  {sightingMarkers.length} sightings
+                </span>
+                <svg className="h-5 w-5 text-brand-khaki" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
+            )}
           </div>
         )}
 
@@ -356,7 +378,7 @@ export default function DrivePage() {
             </div>
           ) : (
             <div className="rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
-              <div className="grid grid-cols-4 gap-2">
+              <div className="flex items-center gap-2">
                 {tracking ? (
                   <button
                     onClick={stopTracking}
@@ -390,12 +412,10 @@ export default function DrivePage() {
                   <span className="text-xs font-semibold text-brand-gold">Trip</span>
                 </button>
 
-                <div />
-
                 <button
                   onClick={handleEndDrive}
                   disabled={offlineEndDrive.isPending}
-                  className="flex flex-col items-center gap-1 rounded-xl bg-red-50 px-3 py-3 transition active:scale-95 disabled:opacity-50"
+                  className="ml-auto flex flex-col items-center gap-1 rounded-xl bg-red-50 px-3 py-3 transition active:scale-95 disabled:opacity-50"
                 >
                   <svg className="h-6 w-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
                     <rect x="4" y="4" width="16" height="16" rx="2" />

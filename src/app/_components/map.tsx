@@ -35,6 +35,7 @@ interface MapProps {
   onMapClick?: (lat: number, lng: number) => void;
   showOverlay?: boolean;
   showRoads?: boolean;
+  currentPosition?: { lat: number; lng: number } | null;
   className?: string;
   mapRef?: React.MutableRefObject<L.Map | null>;
 }
@@ -67,6 +68,7 @@ export function DriveMap({
   onMapClick,
   showOverlay = false,
   showRoads: showRoadsDefault = false,
+  currentPosition,
   className = "h-full w-full",
   mapRef: externalMapRef,
 }: MapProps) {
@@ -78,13 +80,16 @@ export function DriveMap({
   const photoMarkersRef = useRef<L.Marker[]>([]);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const roadsLayerRef = useRef<L.GeoJSON | null>(null);
+  const osmLayerRef = useRef<L.TileLayer | null>(null);
+  const satelliteLayerRef = useRef<L.TileLayer | null>(null);
   const [overlayVisible, setOverlayVisible] = useState(false);
   const [roadsVisible, setRoadsVisible] = useState(showRoadsDefault);
+  const [satelliteActive, setSatelliteActive] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRefToUse.current) return;
 
-    const map = L.map(containerRef.current).setView(center, zoom);
+    const map = L.map(containerRef.current, { zoomControl: false }).setView(center, zoom);
 
     const osmLayer = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: "&copy; OpenStreetMap contributors",
@@ -100,14 +105,8 @@ export function DriveMap({
     );
 
     osmLayer.addTo(map);
-
-    L.control
-      .layers(
-        { Street: osmLayer, Satellite: satelliteLayer },
-        {},
-        { position: "topright" },
-      )
-      .addTo(map);
+    osmLayerRef.current = osmLayer;
+    satelliteLayerRef.current = satelliteLayer;
 
     map.createPane("roads");
     map.getPane("roads")!.style.zIndex = "350";
@@ -178,6 +177,17 @@ export function DriveMap({
   }, [roadsVisible]);
 
   useEffect(() => {
+    if (!mapRefToUse.current || !osmLayerRef.current || !satelliteLayerRef.current) return;
+    if (satelliteActive) {
+      osmLayerRef.current.remove();
+      satelliteLayerRef.current.addTo(mapRefToUse.current);
+    } else {
+      satelliteLayerRef.current.remove();
+      osmLayerRef.current.addTo(mapRefToUse.current);
+    }
+  }, [satelliteActive]);
+
+  useEffect(() => {
     if (!mapRefToUse.current) return;
 
     if (polylineRef.current) {
@@ -231,24 +241,47 @@ export function DriveMap({
       });
   }, [photos]);
 
+  const handleLocate = () => {
+    if (!mapRefToUse.current || !currentPosition) return;
+    mapRefToUse.current.setView([currentPosition.lat, currentPosition.lng], 16);
+  };
+
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className={className} />
-      {showOverlay && (
+      <div className="absolute right-2 top-2 z-[1000] flex flex-col gap-1.5">
         <button
-          onClick={() => setOverlayVisible(!overlayVisible)}
-          className="absolute right-2 top-20 z-[1000] rounded bg-white px-2 py-1 text-xs font-medium shadow-md"
+          onClick={() => setSatelliteActive(!satelliteActive)}
+          className="rounded bg-white px-2 py-1 text-xs font-medium shadow-md"
         >
-          {overlayVisible ? "Hide Reserve Map" : "Show Reserve Map"}
+          {satelliteActive ? "Street" : "Satellite"}
         </button>
-      )}
-      <button
-        onClick={() => setRoadsVisible(!roadsVisible)}
-        className="absolute right-2 z-[1000] rounded bg-white px-2 py-1 text-xs font-medium shadow-md"
-        style={{ top: showOverlay ? "6.5rem" : "5rem" }}
-      >
-        {roadsVisible ? "Hide Roads" : "Show Roads"}
-      </button>
+        {showOverlay && (
+          <button
+            onClick={() => setOverlayVisible(!overlayVisible)}
+            className="rounded bg-white px-2 py-1 text-xs font-medium shadow-md"
+          >
+            {overlayVisible ? "Hide Reserve" : "Reserve Map"}
+          </button>
+        )}
+        <button
+          onClick={() => setRoadsVisible(!roadsVisible)}
+          className="rounded bg-white px-2 py-1 text-xs font-medium shadow-md"
+        >
+          {roadsVisible ? "Hide Roads" : "Roads"}
+        </button>
+        {currentPosition && (
+          <button
+            onClick={handleLocate}
+            className="flex items-center justify-center rounded bg-white p-1.5 shadow-md"
+          >
+            <svg className="h-4 w-4 text-brand-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="3" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
+            </svg>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

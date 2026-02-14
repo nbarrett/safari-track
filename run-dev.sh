@@ -109,7 +109,7 @@ port_in_use() {
 }
 
 check_port() {
-  local port="${DEV_PORT:-3002}"
+  local port="${DEV_PORT:-3003}"
   if port_in_use "localhost" "$port"; then
     fail "Port $port is already in use. Run ./kill-dev.sh first or set DEV_PORT to use a different port."
   fi
@@ -140,7 +140,7 @@ start_dev() {
   info "Starting Next.js dev server with Turbopack (logs: $DEV_LOG)..."
   (
     cd "$ROOT_DIR"
-    pnpm dev --port "${DEV_PORT:-3002}"
+    pnpm dev --port "${DEV_PORT:-3003}"
   ) | tee -a "$DEV_LOG" &
   DEV_PID=$!
 }
@@ -172,7 +172,7 @@ main() {
   start_dev
 
   trap cleanup EXIT INT TERM
-  info "Klaserie Camps dev server -> http://localhost:${DEV_PORT:-3002}"
+  info "Safari Track dev server -> http://localhost:${DEV_PORT:-3003}"
   info "Press Ctrl+C to stop."
   wait
 }

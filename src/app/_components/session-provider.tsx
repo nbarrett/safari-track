@@ -25,9 +25,7 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const stored = getCachedSession();
-    if (stored) {
-      setCachedSession(stored);
-    }
+    if (stored) setCachedSession(stored);
   }, []);
 
   return (

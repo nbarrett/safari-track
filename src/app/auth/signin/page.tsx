@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { cacheCredentials, cacheSession, getOfflineSession } from "~/lib/session-cache";
 
 export default function SignInPage() {
   const router = useRouter();
@@ -18,6 +19,18 @@ export default function SignInPage() {
     setLoading(true);
     setError(null);
 
+    if (!navigator.onLine) {
+      const offlineSession = await getOfflineSession(name, password);
+      if (offlineSession) {
+        cacheSession(offlineSession);
+        router.push("/");
+        return;
+      }
+      setError("No internet connection. Please connect to sign in for the first time.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const result = await signIn("credentials", {
         name,
@@ -29,6 +42,9 @@ export default function SignInPage() {
         setError("Invalid name or password");
         setLoading(false);
       } else {
+        const res = await fetch("/api/auth/session");
+        const session = await res.json();
+        await cacheCredentials(name, password, session);
         router.push("/");
       }
     } catch {
@@ -51,19 +67,19 @@ export default function SignInPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center">
-          <Image
-            src="/logo-white.png"
-            alt="Safari Track"
-            width={200}
-            height={100}
-            className="mb-4"
-            priority
-          />
-          <p className="text-sm text-brand-cream/80">Wildlife Tracking</p>
-        </div>
-
         <form onSubmit={handleSubmit} className="space-y-4 rounded-lg bg-white/95 p-6 shadow-xl backdrop-blur-sm">
+          <div className="mb-2 flex flex-col items-center">
+            <Image
+              src="/logo-icon.png"
+              alt="Safari Track"
+              width={320}
+              height={320}
+              className="mb-4 w-40 rounded-3xl"
+              priority
+            />
+            <h1 className="text-2xl font-semibold tracking-wide text-brand-dark">Safari Track</h1>
+            <p className="text-sm text-brand-khaki">Wildlife Tracking</p>
+          </div>
           {error && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
           )}

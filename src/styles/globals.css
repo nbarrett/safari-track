@@ -13,3 +13,9 @@
   --color-brand-dark: #2F2F2F;
   --color-brand-teal: #468189;
 }
+
+@keyframes loader-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

@@ -9,6 +9,7 @@ import { Nav } from "~/app/_components/nav";
 import { SafariPrompt } from "~/app/_components/safari-prompt";
 import { SwProvider } from "~/app/_components/sw-provider";
 import { SyncIndicator } from "~/app/_components/sync-indicator";
+import { LoaderDismiss } from "~/app/_components/loader-dismiss";
 
 export const metadata: Metadata = {
   title: "Safari Track",
@@ -44,10 +45,47 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <body className="flex h-dvh flex-col bg-brand-cream">
+      <body suppressHydrationWarning className="flex h-dvh flex-col bg-brand-cream" style={{ backgroundColor: "#EDE4D9" }}>
+        <div
+          id="app-loader"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: "#EDE4D9",
+          }}
+        >
+          <p
+            style={{
+              margin: 0,
+              fontSize: "1.5rem",
+              fontWeight: 600,
+              color: "#6B4C2E",
+              letterSpacing: "0.025em",
+            }}
+          >
+            Safari Track
+          </p>
+          <div
+            style={{
+              marginTop: "1.5rem",
+              width: "2rem",
+              height: "2rem",
+              border: "3px solid #D4C5B0",
+              borderTopColor: "#6B4C2E",
+              borderRadius: "50%",
+              animation: "loader-spin 0.8s linear infinite",
+            }}
+          />
+        </div>
         <AuthSessionProvider>
           <TRPCReactProvider>
             <SwProvider>
+              <LoaderDismiss />
               <SafariPrompt />
               <Nav />
               {children}

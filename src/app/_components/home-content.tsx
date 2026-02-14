@@ -23,7 +23,7 @@ export function HomeContent({ userName }: HomeContentProps) {
           <h1 className="text-xl font-bold text-white drop-shadow-md">Welcome back, {userName}</h1>
           {lodge.data && (
             <p className="mt-1 text-sm text-white/70">
-              {lodge.data.name}
+              {lodge.data.brand ? `${lodge.data.brand} — ${lodge.data.name}` : lodge.data.name}
             </p>
           )}
         </div>

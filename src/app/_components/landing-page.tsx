@@ -29,11 +29,11 @@ export function LandingPage() {
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-between px-6 py-12">
         <div className="flex flex-col items-center text-center">
           <Image
-            src="/logo-white.png"
+            src="/logo-icon.png"
             alt="Safari Track"
-            width={180}
-            height={80}
-            className="mb-4"
+            width={120}
+            height={120}
+            className="mb-4 rounded-2xl shadow-lg"
           />
           <h1 className="text-4xl font-light tracking-wide text-white">
             Safari Track

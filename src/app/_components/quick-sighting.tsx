@@ -21,6 +21,7 @@ interface QuickSightingPanelProps {
   currentPosition: { lat: number; lng: number } | null;
   initialSpecies?: QuickSpecies[];
   onSightingLogged?: () => void;
+  onCollapse?: () => void;
 }
 
 function triggerHaptic() {
@@ -34,6 +35,7 @@ export function QuickSightingPanel({
   currentPosition,
   initialSpecies,
   onSightingLogged,
+  onCollapse,
 }: QuickSightingPanelProps) {
   const [quickSpecies, setQuickSpecies] = useState<QuickSpecies[]>(initialSpecies ?? []);
   const [searchQuery, setSearchQuery] = useState("");
@@ -217,9 +219,19 @@ export function QuickSightingPanel({
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </button>
-        <span className="text-sm font-semibold text-brand-dark">
+        <span className="flex-1 text-sm font-semibold text-brand-dark">
           {sortedSpecies.length} species · {sortedSpecies.reduce((sum, s) => sum + s.count, 0)} sightings
         </span>
+        {onCollapse && (
+          <button
+            onClick={onCollapse}
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition active:scale-95 active:bg-brand-cream"
+          >
+            <svg className="h-5 w-5 text-brand-khaki" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        )}
       </div>
 
       {searchOpen && (

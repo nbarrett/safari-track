@@ -1,6 +1,6 @@
-# Klaserie Camps
+# Safari Track
 
-A real-time wildlife tracking web application for game guides at Klaserie Private Nature Reserve. Guides log into their lodge, start a game drive, and the app tracks their GPS route while they record wildlife sightings along the way. Each guide maintains a personal species checklist that updates automatically as they log sightings.
+A real-time wildlife tracking web application for game guides. Guides log into their lodge, start a game drive, and the app tracks their GPS route while they record wildlife sightings along the way. Each guide maintains a personal species checklist that updates automatically as they log sightings.
 
 The species checklist is also browsable by anyone without signing in.
 
@@ -42,7 +42,7 @@ The species checklist is also browsable by anyone without signing in.
 - Sightings linked to the active drive session and guide
 
 ### Personal Species Checklist
-- 243 pre-loaded species (mammals, birds, reptiles) from the Klaserie area
+- 243 pre-loaded species (mammals, birds, reptiles) from the Greater Kruger region
 - Progress tracking: percentage complete, breakdown by category
 - Auto-updates when sightings are logged
 - Filter by category, search, or spotted-only view
@@ -98,7 +98,7 @@ The dev scripts handle dependency installation, Prisma client generation, schema
 run-dev.bat
 ```
 
-The server starts at **http://localhost:3000** (override with `DEV_PORT` env var).
+The server starts at **http://localhost:3003** (override with `DEV_PORT` env var).
 
 ### Manual Setup (alternative)
 
@@ -140,7 +140,7 @@ To manually kill the process:
 
 ```bash
 # Find and kill the Next.js dev server
-lsof -ti :3000 | xargs kill
+lsof -ti :3003 | xargs kill
 ```
 
 ### Windows (PowerShell)
@@ -154,8 +154,8 @@ Press `Ctrl+C` in the terminal running the dev server, or:
 To manually kill the process:
 
 ```powershell
-# Find PID on port 3000
-netstat -ano | findstr :3000
+# Find PID on port 3003
+netstat -ano | findstr :3003
 # Kill it
 Stop-Process -Id <PID> -Force
 ```
@@ -239,7 +239,7 @@ prisma/
 
 ## Lodges
 
-All three camps are in the north-west sector of the Klaserie Private Nature Reserve, Greater Kruger:
+All three camps are in the north-west sector of the Greater Kruger:
 
 | Camp | Latitude | Longitude |
 |------|----------|-----------|

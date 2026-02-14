@@ -1,6 +1,6 @@
 # Offline-First Mode
 
-Klaserie Camps is designed for game guides operating in the Klaserie Private Nature Reserve where cellular coverage is unreliable. The app works fully offline — storing data locally, caching images, and syncing to the server when connectivity returns.
+Safari Track is designed for game guides operating in reserves where cellular coverage is unreliable. The app works fully offline — storing data locally, caching images, and syncing to the server when connectivity returns.
 
 ## Getting Started (Guide Onboarding)
 

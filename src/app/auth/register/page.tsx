@@ -5,6 +5,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { cacheCredentials } from "~/lib/session-cache";
 import { api } from "~/trpc/react";
 
 export default function RegisterPage() {
@@ -51,6 +52,9 @@ export default function RegisterPage() {
         setError("Registration succeeded but sign-in failed. Please sign in manually.");
         setLoading(false);
       } else {
+        const res = await fetch("/api/auth/session");
+        const session = await res.json();
+        await cacheCredentials(name, password, session);
         router.push("/");
       }
     } catch (err) {
@@ -76,13 +80,14 @@ export default function RegisterPage() {
       <div className="relative z-10 w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center">
           <Image
-            src="/logo-white.png"
+            src="/logo-icon.png"
             alt="Safari Track"
-            width={200}
-            height={100}
-            className="mb-4"
+            width={320}
+            height={320}
+            className="mb-4 rounded-3xl"
             priority
           />
+          <h1 className="text-2xl font-semibold tracking-wide text-white">Safari Track</h1>
           <p className="text-sm text-brand-cream/80">Wildlife Tracking</p>
         </div>
 
