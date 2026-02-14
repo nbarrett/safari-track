@@ -5,17 +5,14 @@ import Link from "next/link";
 
 const FEATURES = [
   {
-    emoji: "🗺️",
     title: "GPS Game Drives",
     description: "Track your game drives with live GPS mapping and route recording.",
   },
   {
-    emoji: "🦁",
     title: "Wildlife Sightings",
     description: "Log sightings with photos, GPS coordinates, and species details.",
   },
   {
-    emoji: "✅",
     title: "Species Checklist",
     description: "Build your personal checklist of species spotted in the reserve.",
   },
@@ -42,7 +39,7 @@ export function LandingPage() {
             Safari Track
           </h1>
           <p className="mt-2 text-sm tracking-widest uppercase text-white/70">
-            Klaserie Private Nature Reserve
+            Wildlife Tracking
           </p>
         </div>
 
@@ -63,9 +60,8 @@ export function LandingPage() {
                 key={feature.title}
                 className="rounded-lg bg-white/10 p-4 text-left backdrop-blur-sm"
               >
-                <div className="mb-1 text-lg">
-                  <span className="mr-2">{feature.emoji}</span>
-                  <span className="font-medium text-white">{feature.title}</span>
+                <div className="mb-1 text-lg font-medium text-white">
+                  {feature.title}
                 </div>
                 <p className="text-xs leading-relaxed text-white/60">
                   {feature.description}

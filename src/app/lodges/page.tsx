@@ -13,7 +13,7 @@ export default function LodgesPage() {
       <div className="relative z-10 mx-auto max-w-5xl px-6 py-12 sm:px-8">
         <div className="text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-brand-gold">
-            Klaserie Private Nature Reserve
+            Greater Kruger, South Africa
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white drop-shadow sm:text-4xl">
             Our Camps

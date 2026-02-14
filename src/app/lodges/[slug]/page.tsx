@@ -58,7 +58,7 @@ export default function LodgeShowcasePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-8 sm:p-12">
           <p className="text-sm font-medium uppercase tracking-widest text-brand-gold">
-            Klaserie Private Nature Reserve
+            {lodge.location}
           </p>
           <h1 className="mt-2 text-4xl font-bold text-white sm:text-5xl">
             {lodge.name}
@@ -106,10 +106,6 @@ export default function LodgeShowcasePage() {
                 <div>
                   <dt className="text-brand-khaki">Location</dt>
                   <dd className="font-medium text-brand-dark">{lodge.location}</dd>
-                </div>
-                <div>
-                  <dt className="text-brand-khaki">Reserve</dt>
-                  <dd className="font-medium text-brand-dark">Klaserie Private Nature Reserve</dd>
                 </div>
                 <div>
                   <dt className="text-brand-khaki">Region</dt>

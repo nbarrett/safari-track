@@ -78,7 +78,6 @@ export function Nav() {
             {lodge.data && (
               <div className="hidden border-l border-white/20 pl-6 lg:block">
                 <div className="text-lg font-semibold text-white">{lodge.data.name}</div>
-                <div className="text-xs text-brand-gold/80">Klaserie Private Nature Reserve</div>
               </div>
             )}
             <OfflineIndicator />
@@ -157,7 +156,6 @@ export function Nav() {
           {lodge.data && (
             <div className="border-b border-white/10 pb-4">
               <div className="text-lg font-semibold text-white">{lodge.data.name}</div>
-              <div className="text-xs text-brand-gold/80">Klaserie Private Nature Reserve</div>
             </div>
           )}
           <div className="flex flex-1 flex-col py-4">
