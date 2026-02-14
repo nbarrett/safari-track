@@ -5,12 +5,19 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
+import { calculateDriveStats } from "~/lib/drive-stats";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
   { ssr: false, loading: () => <div className="flex h-[50vh] items-center justify-center rounded-lg bg-brand-cream">Loading map...</div> },
+);
+
+const DriveFlythrough = dynamic(
+  () => import("~/app/_components/drive-flythrough").then((mod) => mod.DriveFlythrough),
+  { ssr: false },
 );
 
 interface GpsPoint {
@@ -30,6 +37,8 @@ export default function DriveDetailPage() {
   const params = useParams();
   const { data: session, status } = useSession();
   const driveId = params.id as string;
+  const [showFlythrough, setShowFlythrough] = useState(false);
+  const [selectedPhoto, setSelectedPhoto] = useState<DrivePhoto | null>(null);
 
   const drive = api.drive.detail.useQuery({ id: driveId });
 
@@ -61,6 +70,9 @@ export default function DriveDetailPage() {
 
   const routePoints = (drive.data.route ?? []) as unknown as GpsPoint[];
   const photos = (drive.data.photos ?? []) as unknown as DrivePhoto[];
+  const photoMarkers = photos
+    .filter((p) => p.lat != null && p.lng != null)
+    .map((p) => ({ url: p.url, lat: p.lat!, lng: p.lng!, caption: p.caption }));
 
   const sightingMarkers = drive.data.sightings.map((s) => ({
     id: s.id,
@@ -71,16 +83,41 @@ export default function DriveDetailPage() {
     notes: s.notes,
   }));
 
+  const stats = calculateDriveStats(routePoints, drive.data.sightings.length);
+
+  if (showFlythrough) {
+    return (
+      <DriveFlythrough
+        route={routePoints}
+        photos={photoMarkers}
+        sightings={sightingMarkers}
+        onClose={() => setShowFlythrough(false)}
+      />
+    );
+  }
+
   return (
     <main className="relative min-h-screen">
       <PageBackdrop />
 
       <div className="relative z-10 pb-8">
-        <div className="mx-auto max-w-3xl px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <Link href="/drives" className="text-sm text-brand-gold hover:text-brand-gold/80">
             &larr; Back to history
           </Link>
-          <h1 className="mt-2 text-xl font-bold text-white drop-shadow-md">Drive Detail</h1>
+
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h1 className="text-xl font-bold text-white drop-shadow-md">Drive Detail</h1>
+            {routePoints.length > 1 && (
+              <button
+                onClick={() => setShowFlythrough(true)}
+                className="rounded-lg bg-brand-gold px-3 py-1 text-sm font-medium text-brand-dark hover:bg-brand-gold/80"
+              >
+                ▶ Flythrough
+              </button>
+            )}
+          </div>
+
           <div className="mt-1 text-sm text-white/70">
             {drive.data.user.name} &middot;{" "}
             {new Date(drive.data.startedAt).toLocaleDateString("en-ZA")}{" "}
@@ -98,76 +135,202 @@ export default function DriveDetailPage() {
               </>
             )}
           </div>
-        </div>
 
-        <DriveMap
-          zoom={14}
-          route={routePoints}
-          sightings={sightingMarkers}
-          className="h-[60vh] w-full lg:h-[70vh]"
-        />
-
-        <div className="mx-auto max-w-3xl px-4 pt-4 sm:px-6 lg:px-8">
-          {drive.data.notes && (
-            <div className="mb-4 rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur">
-              <div className="text-xs font-medium uppercase text-brand-khaki">Notes</div>
-              <div className="mt-1 text-sm text-brand-dark">{drive.data.notes}</div>
+          {stats.totalDistanceKm > 0 && (
+            <div className="mt-3 flex flex-wrap gap-4">
+              <StatBadge label="Distance" value={`${stats.totalDistanceKm.toFixed(1)} km`} />
+              <StatBadge label="Duration" value={formatDuration(stats.durationMinutes)} />
+              <StatBadge label="Avg Speed" value={`${stats.avgSpeedKmh.toFixed(1)} km/h`} />
+              <StatBadge label="Max Speed" value={`${stats.maxSpeedKmh.toFixed(0)} km/h`} />
+              <StatBadge label="Sightings" value={`${stats.sightingsCount}`} />
             </div>
           )}
+        </div>
 
-          {photos.length > 0 && (
-            <>
-              <h2 className="mb-2 text-lg font-semibold text-white drop-shadow-md">
-                Photos ({photos.length})
-              </h2>
-              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {photos.map((photo, i) => (
-                  <div key={i} className="overflow-hidden rounded-lg bg-white/90 shadow-sm backdrop-blur">
-                    <img
-                      src={photo.url}
-                      alt={photo.caption ?? `Drive photo ${i + 1}`}
-                      className="aspect-square w-full object-cover"
-                    />
-                    {photo.caption && (
-                      <div className="px-2 py-1 text-xs text-brand-dark">{photo.caption}</div>
+        <div className="mx-auto max-w-7xl lg:flex lg:gap-4 lg:px-6">
+          <div className="lg:flex-1">
+            <DriveMap
+              zoom={14}
+              route={routePoints}
+              sightings={sightingMarkers}
+              photos={photoMarkers}
+              className="h-[50vh] w-full lg:h-[70vh] lg:rounded-lg"
+            />
+          </div>
+
+          <div className="mx-auto max-w-3xl px-4 pt-4 sm:px-6 lg:w-96 lg:max-w-none lg:px-0 lg:pt-0">
+            {drive.data.notes && (
+              <div className="mb-4 rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur">
+                <div className="text-xs font-medium uppercase text-brand-khaki">Notes</div>
+                <div className="mt-1 text-sm text-brand-dark">{drive.data.notes}</div>
+              </div>
+            )}
+
+            {photos.length > 0 && (
+              <>
+                <h2 className="mb-2 text-lg font-semibold text-white drop-shadow-md">
+                  Photos ({photos.length})
+                </h2>
+                <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2">
+                  {photos.map((photo, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedPhoto(photo)}
+                      className="overflow-hidden rounded-lg bg-white/90 shadow-sm backdrop-blur text-left"
+                    >
+                      <img
+                        src={photo.url}
+                        alt={photo.caption ?? `Drive photo ${i + 1}`}
+                        className="aspect-square w-full object-cover"
+                      />
+                      {photo.caption && (
+                        <div className="px-2 py-1 text-xs text-brand-dark">{photo.caption}</div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <h2 className="mb-2 text-lg font-semibold text-white drop-shadow-md">
+              Sightings ({drive.data.sightings.length})
+            </h2>
+
+            {drive.data.sightings.length > 0 ? (
+              <div className="space-y-2">
+                {drive.data.sightings.map((sighting) => (
+                  <div
+                    key={sighting.id}
+                    className="rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-brand-dark">
+                        {sighting.species.commonName}
+                      </div>
+                      <div className="text-sm text-brand-khaki">x{sighting.count}</div>
+                    </div>
+                    {sighting.notes && (
+                      <div className="mt-1 text-sm text-brand-khaki">{sighting.notes}</div>
                     )}
+                    <div className="mt-1 text-xs text-brand-khaki/60">
+                      {sighting.latitude.toFixed(5)}, {sighting.longitude.toFixed(5)}
+                    </div>
                   </div>
                 ))}
               </div>
-            </>
-          )}
-
-          <h2 className="mb-2 text-lg font-semibold text-white drop-shadow-md">
-            Sightings ({drive.data.sightings.length})
-          </h2>
-
-          {drive.data.sightings.length > 0 ? (
-            <div className="space-y-2">
-              {drive.data.sightings.map((sighting) => (
-                <div
-                  key={sighting.id}
-                  className="rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="font-medium text-brand-dark">
-                      {sighting.species.commonName}
-                    </div>
-                    <div className="text-sm text-brand-khaki">x{sighting.count}</div>
-                  </div>
-                  {sighting.notes && (
-                    <div className="mt-1 text-sm text-brand-khaki">{sighting.notes}</div>
-                  )}
-                  <div className="mt-1 text-xs text-brand-khaki/60">
-                    {sighting.latitude.toFixed(5)}, {sighting.longitude.toFixed(5)}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-white/60">No sightings recorded during this drive.</p>
-          )}
+            ) : (
+              <p className="text-sm text-white/60">No sightings recorded during this drive.</p>
+            )}
+          </div>
         </div>
+
+        {routePoints.length > 1 && (
+          <div className="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
+            <DriveTimeline
+              route={routePoints}
+              photos={photoMarkers}
+              sightings={sightingMarkers}
+            />
+          </div>
+        )}
       </div>
+
+      {selectedPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setSelectedPhoto(null)}
+        >
+          <div className="max-h-[90vh] max-w-[90vw]">
+            <img
+              src={selectedPhoto.url}
+              alt={selectedPhoto.caption ?? "Drive photo"}
+              className="max-h-[85vh] w-auto rounded-xl object-contain"
+            />
+            {selectedPhoto.caption && (
+              <div className="mt-2 text-center text-sm text-white">{selectedPhoto.caption}</div>
+            )}
+          </div>
+        </div>
+      )}
     </main>
+  );
+}
+
+function StatBadge({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg bg-white/10 px-3 py-1.5 backdrop-blur">
+      <div className="text-[10px] font-medium uppercase text-white/50">{label}</div>
+      <div className="text-sm font-semibold text-white">{value}</div>
+    </div>
+  );
+}
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = Math.round(minutes % 60);
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
+}
+
+interface TimelineProps {
+  route: { lat: number; lng: number; timestamp: string }[];
+  photos: { lat: number; lng: number; url: string; caption?: string | null }[];
+  sightings: { id: string; lat: number; lng: number; speciesName: string }[];
+}
+
+function DriveTimeline({ route, photos, sightings }: TimelineProps) {
+  const startTime = new Date(route[0]!.timestamp).getTime();
+  const endTime = new Date(route[route.length - 1]!.timestamp).getTime();
+  const duration = endTime - startTime;
+
+  if (duration <= 0) return null;
+
+  const findClosestTimePosition = (lat: number, lng: number): number => {
+    let minDist = Infinity;
+    let closestIdx = 0;
+    for (let i = 0; i < route.length; i++) {
+      const dx = route[i]!.lat - lat;
+      const dy = route[i]!.lng - lng;
+      const dist = dx * dx + dy * dy;
+      if (dist < minDist) {
+        minDist = dist;
+        closestIdx = i;
+      }
+    }
+    const t = new Date(route[closestIdx]!.timestamp).getTime();
+    return ((t - startTime) / duration) * 100;
+  };
+
+  return (
+    <div className="rounded-lg bg-white/10 p-3 backdrop-blur">
+      <div className="text-xs font-medium uppercase text-white/50 mb-2">Timeline</div>
+      <div className="relative h-6">
+        <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/20" />
+        {photos.map((p, i) => (
+          <div
+            key={`p-${i}`}
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${findClosestTimePosition(p.lat, p.lng)}%` }}
+            title={p.caption ?? "Photo"}
+          >
+            <div className="h-3 w-3 rounded-full bg-blue-500 border border-white" />
+          </div>
+        ))}
+        {sightings.map((s) => (
+          <div
+            key={s.id}
+            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2"
+            style={{ left: `${findClosestTimePosition(s.lat, s.lng)}%` }}
+            title={s.speciesName}
+          >
+            <div className="h-3 w-3 rounded-full bg-red-500 border border-white" />
+          </div>
+        ))}
+      </div>
+      <div className="mt-1 flex justify-between text-[10px] text-white/40">
+        <span>{new Date(startTime).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })}</span>
+        <span>{new Date(endTime).toLocaleTimeString("en-ZA", { hour: "2-digit", minute: "2-digit" })}</span>
+      </div>
+    </div>
   );
 }
