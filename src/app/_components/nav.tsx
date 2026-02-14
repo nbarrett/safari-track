@@ -95,7 +95,7 @@ export function Nav() {
             </div>
           </div>
           <button
-            onClick={() => signOut()}
+            onClick={() => signOut({ callbackUrl: "/auth/signin" })}
             className="hidden rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white lg:block"
           >
             Sign Out
@@ -175,7 +175,10 @@ export function Nav() {
             <OfflineIndicator />
             <PrecacheIndicator />
             <button
-              onClick={() => signOut()}
+              onClick={() => {
+                closeMenu();
+                void signOut({ callbackUrl: "/auth/signin" });
+              }}
               className="text-lg font-medium text-white/50 transition hover:text-white"
             >
               Sign Out
