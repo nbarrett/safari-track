@@ -12,7 +12,7 @@ import { PrecacheIndicator } from "~/app/_components/precache-indicator";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
-  { href: "/lodges", label: "Camps" },
+  { href: "/lodges", label: "Lodges" },
   { href: "/drive", label: "Drive", authOnly: true },
   { href: "/checklist", label: "Checklist" },
   { href: "/drives", label: "History", authOnly: true },
@@ -73,24 +73,6 @@ export function Nav() {
       <nav className="sticky top-0 z-50 hidden border-b border-white/10 bg-brand-brown/95 backdrop-blur-sm lg:block">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-6">
-            <Link href="/" className="flex-shrink-0">
-              <Image
-                src="/logo-icon.png"
-                alt="Safari Track"
-                width={240}
-                height={112}
-                className="h-14 w-auto"
-                priority
-              />
-            </Link>
-            {lodge.data && (
-              <div className="border-l border-white/20 pl-6">
-                {lodge.data.brand && (
-                  <div className="text-xs font-medium uppercase tracking-wider text-white/50">{lodge.data.brand}</div>
-                )}
-                <div className="text-lg font-semibold text-white">{lodge.data.name}</div>
-              </div>
-            )}
             <OfflineIndicator />
             <PrecacheIndicator />
             <div className="flex items-center gap-2">
@@ -134,17 +116,8 @@ export function Nav() {
       </nav>
 
       {!hideMobileBar && (
-        <nav className="fixed left-0 right-0 top-0 z-50 border-b border-white/10 bg-brand-brown/95 pt-[env(safe-area-inset-top)] backdrop-blur-sm lg:hidden">
-          <div className="flex items-center justify-between px-4 py-1">
-            <Link href="/" className="flex-shrink-0">
-              <Image
-                src="/logo-icon.png"
-                alt="Safari Track"
-                width={240}
-                height={112}
-                className="h-10 w-auto"
-              />
-            </Link>
+        <nav className="fixed right-0 top-0 z-50 pt-[env(safe-area-inset-top)] lg:hidden">
+          <div className="flex items-center justify-end px-4 py-2">
             <div className="flex items-center gap-3">
               <OfflineIndicator />
               <PrecacheIndicator />
@@ -164,7 +137,7 @@ export function Nav() {
         </nav>
       )}
       {!hideMobileBar && (
-        <div className="h-[calc(env(safe-area-inset-top)+3rem)] lg:hidden" />
+        <div className="h-[env(safe-area-inset-top)] lg:hidden" />
       )}
 
       <div

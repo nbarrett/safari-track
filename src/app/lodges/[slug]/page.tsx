@@ -145,7 +145,7 @@ export default function LodgeShowcasePage() {
 
         <div className="mt-16 border-t border-brand-khaki/20 pt-12">
           <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: lodge.brand.accentColour }}>
-            Explore our other camps
+            Explore our other lodges
           </h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {otherLodges.map((other) => (

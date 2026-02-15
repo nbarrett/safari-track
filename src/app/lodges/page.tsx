@@ -16,10 +16,10 @@ export default function LodgesPage() {
             Greater Kruger, South Africa
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white drop-shadow sm:text-4xl">
-            Our Camps
+            Our Lodges
           </h1>
           <p className="mt-3 text-lg text-white/80 drop-shadow">
-            Three exclusive safari camps in the heart of the Greater Kruger
+            Three exclusive safari lodges in the heart of the Greater Kruger
           </p>
         </div>
 

@@ -5,8 +5,18 @@ import { useEffect, useState } from "react";
 const DEFAULT_IMAGES = [
   "/hero-elephants.jpg",
   "/hero-rhinos.webp",
-  "/images/mammals.jpg",
-  "/images/birds.jpg",
+  "/hero-river-sunrise.avif",
+  "/hero-riverbed.avif",
+  "/hero-wildlife-01.jpg",
+  "/hero-wildlife-02.jpg",
+  "/hero-wildlife-03.jpg",
+  "/hero-wildlife-04.jpg",
+  "/hero-wildlife-05.jpg",
+  "/hero-wildlife-07.jpg",
+  "/hero-wildlife-09.jpg",
+  "/hero-wildlife-10.jpg",
+  "/hero-wildlife-11.jpg",
+  "/hero-wildlife-12.jpg",
 ];
 
 interface PageBackdropProps {

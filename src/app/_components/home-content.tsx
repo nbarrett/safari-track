@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
@@ -25,14 +26,31 @@ export function HomeContent({ userName }: HomeContentProps) {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 pb-8 pt-4 sm:px-6 lg:px-8 lg:pt-8">
-        <div className="mb-6">
-          <h1 className="text-xl font-bold text-white drop-shadow-md">Welcome back, {userName}</h1>
+      <div className="relative z-10 mx-auto max-w-3xl px-4 pb-8 pt-6 sm:px-6 lg:px-8">
+        <div className="home-hero mb-6 flex flex-col items-center text-center">
+          <Image
+            src="/logo-icon.png"
+            alt="Safari Track"
+            width={1536}
+            height={1024}
+            className="home-hero-logo h-[180px] w-auto drop-shadow-lg lg:h-[220px]"
+            priority
+          />
           {lodge.data && (
-            <p className="mt-1 text-sm text-white/70">
-              {lodge.data.brand ? `${lodge.data.brand} — ${lodge.data.name}` : lodge.data.name}
-            </p>
+            <div className="home-hero-lodge mt-3">
+              {lodge.data.brand && (
+                <div className="text-xs font-medium uppercase tracking-widest text-white/50">
+                  {lodge.data.brand}
+                </div>
+              )}
+              <div className="text-lg font-semibold text-white drop-shadow-md">
+                {lodge.data.name}
+              </div>
+            </div>
           )}
+          <p className="home-hero-welcome mt-2 text-sm text-white/60">
+            Welcome back, {userName}
+          </p>
         </div>
 
         {activeDrive.data || hasLocalDrive ? (

@@ -81,7 +81,7 @@ export function LandingPage() {
               href="/lodges"
               className="block w-full rounded-lg border border-white/30 px-6 py-3 text-center font-medium text-white transition hover:bg-white/10"
             >
-              Explore Our Camps
+              Explore Our Lodges
             </Link>
             <Link
               href="/checklist"
