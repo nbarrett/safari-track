@@ -17,6 +17,14 @@ const serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   navigationPreload: true,
+  fallbacks: {
+    entries: [
+      {
+        url: "/offline.html",
+        matcher: ({ request }: { request: Request }) => request.mode === "navigate",
+      },
+    ],
+  },
   runtimeCaching: [
     {
       matcher: ({ url }: { url: URL }) => url.pathname === "/api/auth/session",
@@ -29,7 +37,17 @@ const serwist = new Serwist({
         ],
       }),
     },
-    ...defaultCache,
+    {
+      matcher: /\/api\/trpc\/.*/i,
+      handler: new NetworkFirst({
+        cacheName: "trpc-api",
+        networkTimeoutSeconds: 3,
+        plugins: [
+          new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 }),
+          new CacheableResponsePlugin({ statuses: [0, 200] }),
+        ],
+      }),
+    },
     {
       matcher: /^https:\/\/upload\.wikimedia\.org\/.*/i,
       handler: new CacheFirst({
@@ -80,17 +98,7 @@ const serwist = new Serwist({
         ],
       }),
     },
-    {
-      matcher: /\/api\/trpc\/.*/i,
-      handler: new NetworkFirst({
-        cacheName: "trpc-api",
-        networkTimeoutSeconds: 3,
-        plugins: [
-          new ExpirationPlugin({ maxEntries: 50, maxAgeSeconds: 7 * 24 * 60 * 60 }),
-          new CacheableResponsePlugin({ statuses: [0, 200] }),
-        ],
-      }),
-    },
+    ...defaultCache,
   ],
 });
 

@@ -31,16 +31,20 @@ export const idbPersister: QueryPersister = async (queryFn, context, query) => {
           const fresh = await queryFn(context);
           await set(key, { data: fresh, timestamp: Date.now(), queryHash: key }, store);
         } catch {
-          // network error, keep cached
+          /* keep cached */
         }
       })();
     });
     return cached.data;
   }
 
-  const result = await queryFn(context);
-  await set(key, { data: result, timestamp: Date.now(), queryHash: key }, store);
-  return result;
+  try {
+    const result = await queryFn(context);
+    await set(key, { data: result, timestamp: Date.now(), queryHash: key }, store);
+    return result;
+  } catch {
+    return undefined;
+  }
 };
 
 export async function clearPersistedCache() {

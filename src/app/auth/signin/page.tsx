@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cacheCredentials, cacheSession, getOfflineSession } from "~/lib/session-cache";
 
 export default function SignInPage() {
@@ -13,6 +13,20 @@ export default function SignInPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [progressStep, setProgressStep] = useState(0);
+
+  const progressMessages = ["Connecting...", "Authenticating...", "Loading your data..."];
+
+  useEffect(() => {
+    if (!loading) {
+      setProgressStep(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setProgressStep((s) => (s < progressMessages.length - 1 ? s + 1 : s));
+    }, 1500);
+    return () => clearInterval(timer);
+  }, [loading, progressMessages.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,6 +134,15 @@ export default function SignInPage() {
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
+
+          {loading && (
+            <div className="flex flex-col items-center gap-3 pt-2">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-khaki/30 border-t-brand-brown" />
+              <p className="text-sm font-medium text-brand-brown">
+                {progressMessages[progressStep]}
+              </p>
+            </div>
+          )}
 
           <p className="text-center text-sm text-brand-dark/60">
             New here?{" "}

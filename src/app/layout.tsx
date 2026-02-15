@@ -10,6 +10,7 @@ import { SafariPrompt } from "~/app/_components/safari-prompt";
 import { SwProvider } from "~/app/_components/sw-provider";
 import { SyncIndicator } from "~/app/_components/sync-indicator";
 import { LoaderDismiss } from "~/app/_components/loader-dismiss";
+import { OfflineErrorBoundary } from "~/app/_components/error-boundary";
 
 export const metadata: Metadata = {
   title: "Safari Track",
@@ -88,7 +89,9 @@ export default function RootLayout({
               <LoaderDismiss />
               <SafariPrompt />
               <Nav />
-              {children}
+              <OfflineErrorBoundary>
+                {children}
+              </OfflineErrorBoundary>
               <SyncIndicator />
             </SwProvider>
           </TRPCReactProvider>
