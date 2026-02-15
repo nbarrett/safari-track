@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
 import { getLocalDrive } from "~/lib/drive-store";
+import { formatDateTime } from "~/lib/format";
 
 interface HomeContentProps {
   userName: string;
@@ -96,7 +97,7 @@ export function HomeContent({ userName }: HomeContentProps) {
                     </div>
                   </div>
                   <div className="text-xs text-brand-khaki/70">
-                    {new Date(sighting.createdAt).toLocaleDateString("en-ZA")}
+                    {formatDateTime(sighting.createdAt)}
                   </div>
                 </div>
               ))}
@@ -129,7 +130,7 @@ export function HomeContent({ userName }: HomeContentProps) {
                   </div>
                   <div className="text-right">
                     <div className="text-xs text-brand-khaki/70">
-                      {new Date(drive.startedAt).toLocaleDateString("en-ZA")}
+                      {formatDateTime(drive.startedAt)}
                     </div>
                     <div className="text-xs text-brand-khaki/70">
                       {drive.endedAt ? "Completed" : "In Progress"}

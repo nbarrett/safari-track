@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
+import { formatDateTime } from "~/lib/format";
 
 export default function DrivesPage() {
   const { data: session, status } = useSession();
@@ -50,7 +51,7 @@ export default function DrivesPage() {
                   </div>
                   <div className="text-right">
                     <div className="text-sm text-brand-dark/80">
-                      {new Date(drive.startedAt).toLocaleDateString("en-ZA")}
+                      {formatDateTime(drive.startedAt)}
                     </div>
                     <div className="text-xs text-brand-khaki">
                       {drive.endedAt ? "Completed" : "In Progress"}

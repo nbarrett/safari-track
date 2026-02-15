@@ -1,4 +1,5 @@
 import {
+  type QueuedMutation,
   getAll,
   remove,
   incrementRetry,
@@ -56,6 +57,87 @@ async function callMutation(path: string, input: unknown): Promise<unknown> {
   return mutate(input);
 }
 
+interface RoutePointInput {
+  id: string;
+  points: { lat: number; lng: number; timestamp: string }[];
+}
+
+function consolidateQueue(pending: QueuedMutation[]): QueuedMutation[] {
+  const result: QueuedMutation[] = [];
+  const routePointGroups = new Map<string, { merged: QueuedMutation; ids: string[] }>();
+
+  for (const mutation of pending) {
+    if (mutation.path !== "drive.addRoutePoints") {
+      if (routePointGroups.size > 0) {
+        for (const group of routePointGroups.values()) {
+          result.push(group.merged);
+        }
+        routePointGroups.clear();
+      }
+      result.push(mutation);
+      continue;
+    }
+
+    const input = mutation.input as RoutePointInput;
+    const driveId = input.id;
+    const existing = routePointGroups.get(driveId);
+
+    if (existing) {
+      const existingInput = existing.merged.input as RoutePointInput;
+      existingInput.points = [...existingInput.points, ...input.points];
+      existing.ids.push(mutation.id);
+    } else {
+      routePointGroups.set(driveId, {
+        merged: {
+          ...mutation,
+          input: { id: driveId, points: [...input.points] },
+        },
+        ids: [mutation.id],
+      });
+    }
+  }
+
+  for (const group of routePointGroups.values()) {
+    result.push(group.merged);
+  }
+
+  return result;
+}
+
+function collectMergedIds(pending: QueuedMutation[]): Map<string, string[]> {
+  const groups = new Map<string, string[]>();
+  let currentDriveId: string | null = null;
+  let currentIds: string[] = [];
+
+  for (const mutation of pending) {
+    if (mutation.path !== "drive.addRoutePoints") {
+      if (currentDriveId !== null) {
+        groups.set(currentIds[0]!, currentIds);
+        currentDriveId = null;
+        currentIds = [];
+      }
+      continue;
+    }
+
+    const input = mutation.input as RoutePointInput;
+    if (input.id !== currentDriveId) {
+      if (currentDriveId !== null) {
+        groups.set(currentIds[0]!, currentIds);
+      }
+      currentDriveId = input.id;
+      currentIds = [mutation.id];
+    } else {
+      currentIds.push(mutation.id);
+    }
+  }
+
+  if (currentDriveId !== null) {
+    groups.set(currentIds[0]!, currentIds);
+  }
+
+  return groups;
+}
+
 export async function drainQueue(): Promise<void> {
   if (syncing || !navigator.onLine) return;
   syncing = true;
@@ -66,11 +148,14 @@ export async function drainQueue(): Promise<void> {
     return;
   }
 
+  const mergedIds = collectMergedIds(pending);
+  const consolidated = consolidateQueue(pending);
+
   emit({ type: "sync-started", remaining: pending.length });
 
   const idMappings = new Map<string, string>();
 
-  for (const mutation of pending) {
+  for (const mutation of consolidated) {
     const rewrittenInput = rewriteInput(mutation.input, idMappings);
 
     try {
@@ -91,13 +176,20 @@ export async function drainQueue(): Promise<void> {
         }
       }
 
-      await remove(mutation.id);
+      const idsToRemove = mergedIds.get(mutation.id) ?? [mutation.id];
+      for (const id of idsToRemove) {
+        await remove(id);
+      }
+
       const remaining = (await getAll()).length;
       emit({ type: "sync-progress", remaining });
     } catch (err) {
       const retries = await incrementRetry(mutation.id);
       if (retries >= MAX_RETRIES) {
-        await markFailed(mutation.id);
+        const idsToFail = mergedIds.get(mutation.id) ?? [mutation.id];
+        for (const id of idsToFail) {
+          await markFailed(id);
+        }
       }
       emit({
         type: "sync-failed",

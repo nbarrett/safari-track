@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
+import { formatDateTime } from "~/lib/format";
 
 function formatDistance(metres: number): string {
   return `${(metres / 1000).toFixed(1)} km`;
@@ -183,7 +184,7 @@ function StravaContent() {
                       </div>
                       <div className="flex items-start gap-3">
                         <div className="text-right text-sm text-brand-dark/80">
-                          {new Date(activity.startDateLocal).toLocaleDateString("en-ZA")}
+                          {formatDateTime(activity.startDateLocal)}
                         </div>
                         <button
                           onClick={() => importActivity.mutate({ activityId: activity.id })}

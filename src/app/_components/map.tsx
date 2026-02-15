@@ -97,6 +97,8 @@ export function DriveMap({
   const [satelliteActive, setSatelliteActive] = useState(false);
   const roadsVisibleRef = useRef(roadsVisible);
   roadsVisibleRef.current = roadsVisible;
+  const followUserRef = useRef(compactControls);
+  const routeInitialisedRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRefToUse.current) return;
@@ -169,9 +171,22 @@ export function DriveMap({
       });
     }
 
+    if (compactControls) {
+      map.on("dragstart", () => {
+        followUserRef.current = false;
+      });
+    }
+
     mapRefToUse.current = map;
 
+    const container = containerRef.current;
+    const resizeObserver = new ResizeObserver(() => {
+      map.invalidateSize();
+    });
+    resizeObserver.observe(container);
+
     return () => {
+      resizeObserver.disconnect();
       map.remove();
       mapRefToUse.current = null;
     };
@@ -217,9 +232,15 @@ export function DriveMap({
         opacity: 0.8,
       }).addTo(mapRefToUse.current);
 
-      mapRefToUse.current.fitBounds(polylineRef.current.getBounds(), { padding: [20, 20] });
+      if (compactControls) {
+        if (!routeInitialisedRef.current) {
+          routeInitialisedRef.current = true;
+        }
+      } else {
+        mapRefToUse.current.fitBounds(polylineRef.current.getBounds(), { padding: [20, 20] });
+      }
     }
-  }, [route]);
+  }, [route, compactControls]);
 
   useEffect(() => {
     if (!mapRefToUse.current) return;
@@ -275,10 +296,18 @@ export function DriveMap({
         zIndexOffset: 1000,
       }).addTo(mapRefToUse.current);
     }
-  }, [currentPosition]);
+
+    if (compactControls && followUserRef.current) {
+      mapRefToUse.current.setView(
+        [currentPosition.lat, currentPosition.lng],
+        mapRefToUse.current.getZoom(),
+      );
+    }
+  }, [currentPosition, compactControls]);
 
   const handleLocate = () => {
     if (!mapRefToUse.current || !currentPosition) return;
+    followUserRef.current = true;
     mapRefToUse.current.setView([currentPosition.lat, currentPosition.lng], 16);
   };
 

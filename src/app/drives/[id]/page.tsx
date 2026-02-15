@@ -10,6 +10,7 @@ import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
 import { OfflineImage } from "~/app/_components/offline-image";
 import { calculateDriveStats } from "~/lib/drive-stats";
+import { formatDateTime } from "~/lib/format";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
@@ -135,11 +136,7 @@ export default function DriveDetailPage() {
 
           <div className="mt-1 text-sm text-white/70">
             {drive.data.user.name} &middot;{" "}
-            {new Date(drive.data.startedAt).toLocaleDateString("en-ZA")}{" "}
-            {new Date(drive.data.startedAt).toLocaleTimeString("en-ZA", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatDateTime(drive.data.startedAt)}
             {drive.data.endedAt && (
               <>
                 {" "}&ndash;{" "}
