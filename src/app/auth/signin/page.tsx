@@ -37,7 +37,7 @@ export default function SignInPage() {
       const offlineSession = await getOfflineSession(name, password);
       if (offlineSession) {
         cacheSession(offlineSession);
-        router.push("/");
+        window.location.href = "/";
         return;
       }
       setError("No internet connection. Please connect to sign in for the first time.");
@@ -86,8 +86,8 @@ export default function SignInPage() {
             <Image
               src="/logo-icon.png"
               alt="Safari Track"
-              width={360}
-              height={240}
+              width={768}
+              height={512}
               className="mb-4 w-56"
               priority
             />

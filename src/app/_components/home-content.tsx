@@ -31,8 +31,8 @@ export function HomeContent({ userName }: HomeContentProps) {
           <Image
             src="/logo-icon.png"
             alt="Safari Track"
-            width={1536}
-            height={1024}
+            width={768}
+            height={512}
             className="home-hero-logo h-[180px] w-auto drop-shadow-lg lg:h-[220px]"
             priority
           />

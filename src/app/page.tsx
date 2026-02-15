@@ -14,8 +14,8 @@ export default function Home() {
         <Image
           src="/logo-icon.png"
           alt="Safari Track"
-          width={360}
-          height={240}
+          width={768}
+          height={512}
           className="mb-6 w-48"
           priority
         />
