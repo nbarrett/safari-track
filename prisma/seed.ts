@@ -299,7 +299,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash("admin123", 12);
   await prisma.user.upsert({
     where: { email: "admin@safari-track.local" },
-    update: {},
+    update: { role: "ADMIN", hashedPassword, lodgeId: defaultLodge.id },
     create: {
       name: "Admin",
       email: "admin@safari-track.local",

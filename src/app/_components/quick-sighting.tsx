@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { api } from "~/trpc/react";
 import { useOfflineMutation } from "~/lib/use-offline-mutation";
 import { updateTripSpecies } from "~/lib/trip-store";
 import { addLocalSighting } from "~/lib/drive-store";
 import { generateTempId } from "~/lib/offline-queue";
+import { OfflineImage } from "~/app/_components/offline-image";
 
 interface QuickSpecies {
   speciesId: string;
@@ -20,9 +21,11 @@ interface QuickSightingPanelProps {
   driveSessionId: string;
   currentPosition: { lat: number; lng: number } | null;
   initialSpecies?: QuickSpecies[];
-  onSightingLogged?: () => void;
+  onSightingLogged?: (totalCount: number) => void;
   onCollapse?: () => void;
 }
+
+const CATEGORIES = ["All", "Mammal", "Bird", "Reptile"] as const;
 
 function triggerHaptic() {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {
@@ -39,16 +42,12 @@ export function QuickSightingPanel({
 }: QuickSightingPanelProps) {
   const [quickSpecies, setQuickSpecies] = useState<QuickSpecies[]>(initialSpecies ?? []);
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchOpen, setSearchOpen] = useState(false);
+  const [browseOpen, setBrowseOpen] = useState(true);
+  const [activeCategory, setActiveCategory] = useState<string>("All");
   const [longPressTarget, setLongPressTarget] = useState<string | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const speciesSearch = api.species.search.useQuery(
-    { query: searchQuery },
-    { enabled: searchQuery.length > 1 },
-  );
-
-  const speciesList = api.species.list.useQuery(undefined, {
+  const allSpecies = api.species.list.useQuery(undefined, {
     staleTime: 24 * 60 * 60 * 1000,
     gcTime: Infinity,
   });
@@ -77,35 +76,43 @@ export function QuickSightingPanel({
         latitude: input.latitude,
         longitude: input.longitude,
       });
-      onSightingLogged?.();
     },
   });
 
-  const handleTap = useCallback(
-    (species: QuickSpecies) => {
+  const logSighting = useCallback(
+    (species: { id: string; commonName: string; category: string; imageUrl: string | null }) => {
       triggerHaptic();
       const pos = currentPosition ?? { lat: -24.25, lng: 31.15 };
 
-      setQuickSpecies((prev) =>
-        prev.map((s) =>
-          s.speciesId === species.speciesId
-            ? { ...s, count: s.count + 1, lastSightedAt: Date.now() }
-            : s,
-        ),
-      );
+      const existing = quickSpecies.find((s) => s.speciesId === species.id);
+      if (existing) {
+        setQuickSpecies((prev) =>
+          prev.map((s) =>
+            s.speciesId === species.id
+              ? { ...s, count: s.count + 1, lastSightedAt: Date.now() }
+              : s,
+          ),
+        );
+      } else {
+        setQuickSpecies((prev) => [
+          {
+            speciesId: species.id,
+            commonName: species.commonName,
+            category: species.category,
+            imageUrl: species.imageUrl,
+            count: 1,
+            lastSightedAt: Date.now(),
+          },
+          ...prev,
+        ]);
+      }
 
-      void updateTripSpecies(
-        species.speciesId,
-        species.commonName,
-        species.category,
-        species.imageUrl,
-        1,
-      );
+      void updateTripSpecies(species.id, species.commonName, species.category, species.imageUrl, 1);
 
       const sightingId = generateTempId();
       void addLocalSighting({
         id: sightingId,
-        speciesId: species.speciesId,
+        speciesId: species.id,
         latitude: pos.lat,
         longitude: pos.lng,
         count: 1,
@@ -113,13 +120,16 @@ export function QuickSightingPanel({
 
       offlineCreateSighting.mutate({
         driveSessionId,
-        speciesId: species.speciesId,
+        speciesId: species.id,
         latitude: pos.lat,
         longitude: pos.lng,
         count: 1,
       });
+
+      const newTotal = quickSpecies.reduce((sum, s) => sum + s.count, 0) + 1;
+      onSightingLogged?.(newTotal);
     },
-    [currentPosition, driveSessionId, offlineCreateSighting],
+    [currentPosition, driveSessionId, offlineCreateSighting, quickSpecies, onSightingLogged],
   );
 
   const handleDecrement = useCallback(
@@ -136,51 +146,6 @@ export function QuickSightingPanel({
       setLongPressTarget(null);
     },
     [],
-  );
-
-  const handleAddFromSearch = useCallback(
-    (species: { id: string; commonName: string; category: string; imageUrl: string | null }) => {
-      triggerHaptic();
-      const pos = currentPosition ?? { lat: -24.25, lng: 31.15 };
-
-      const existing = quickSpecies.find((s) => s.speciesId === species.id);
-      if (existing) {
-        handleTap(existing);
-      } else {
-        const newEntry: QuickSpecies = {
-          speciesId: species.id,
-          commonName: species.commonName,
-          category: species.category,
-          imageUrl: species.imageUrl,
-          count: 1,
-          lastSightedAt: Date.now(),
-        };
-        setQuickSpecies((prev) => [newEntry, ...prev]);
-
-        void updateTripSpecies(species.id, species.commonName, species.category, species.imageUrl, 1);
-
-        const sightingId = generateTempId();
-        void addLocalSighting({
-          id: sightingId,
-          speciesId: species.id,
-          latitude: pos.lat,
-          longitude: pos.lng,
-          count: 1,
-        });
-
-        offlineCreateSighting.mutate({
-          driveSessionId,
-          speciesId: species.id,
-          latitude: pos.lat,
-          longitude: pos.lng,
-          count: 1,
-        });
-      }
-
-      setSearchQuery("");
-      setSearchOpen(false);
-    },
-    [currentPosition, driveSessionId, handleTap, offlineCreateSighting, quickSpecies],
   );
 
   const handleLongPressStart = (speciesId: string) => {
@@ -202,20 +167,24 @@ export function QuickSightingPanel({
     return a.commonName.localeCompare(b.commonName);
   });
 
-  const searchResults = searchQuery.length > 1
-    ? (speciesSearch.data ?? []).filter(
-        (s) => !quickSpecies.some((qs) => qs.speciesId === s.id),
-      )
-    : [];
+  const sightedMap = new Map(quickSpecies.map((s) => [s.speciesId, s.count]));
+
+  const filteredBrowseSpecies = (allSpecies.data ?? []).filter((s) => {
+    if (activeCategory !== "All" && s.category !== activeCategory) return false;
+    if (searchQuery.length > 0) {
+      return s.commonName.toLowerCase().includes(searchQuery.toLowerCase());
+    }
+    return true;
+  });
 
   return (
-    <div className="flex max-h-[50vh] flex-col rounded-2xl bg-white/95 shadow-xl backdrop-blur-sm">
+    <div className="flex max-h-[60vh] flex-col rounded-2xl bg-white/95 shadow-xl backdrop-blur-sm">
       <div className="flex items-center gap-2 border-b border-brand-khaki/20 px-3 py-2">
         <button
-          onClick={() => setSearchOpen(!searchOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-green/20 transition active:scale-95"
+          onClick={() => setBrowseOpen(!browseOpen)}
+          className={`flex h-10 w-10 items-center justify-center rounded-xl transition active:scale-95 ${browseOpen ? "bg-brand-green text-white" : "bg-brand-green/20 text-brand-green"}`}
         >
-          <svg className="h-5 w-5 text-brand-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
           </svg>
         </button>
@@ -234,107 +203,153 @@ export function QuickSightingPanel({
         )}
       </div>
 
-      {searchOpen && (
-        <div className="border-b border-brand-khaki/20 p-3">
-          <input
-            type="text"
-            placeholder="Search species to add..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            autoFocus
-            className="w-full rounded-lg border border-brand-khaki/30 px-3 py-2 text-sm focus:border-brand-gold focus:outline-none"
-          />
-          {searchResults.length > 0 && (
-            <div className="mt-2 max-h-32 overflow-y-auto rounded-lg border border-brand-khaki/20">
-              {searchResults.map((species) => (
+      {browseOpen && (
+        <div className="flex min-h-0 flex-1 flex-col border-b border-brand-khaki/20">
+          <div className="shrink-0 px-3 pt-3">
+            <div className="flex gap-1">
+              {CATEGORIES.map((cat) => (
                 <button
-                  key={species.id}
-                  onClick={() => handleAddFromSearch(species)}
-                  className="flex w-full items-center gap-3 px-3 py-2 text-left transition active:bg-brand-cream"
+                  key={cat}
+                  onClick={() => setActiveCategory(cat)}
+                  className={`flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition ${
+                    activeCategory === cat
+                      ? "bg-brand-brown text-white shadow-sm"
+                      : "bg-brand-cream/50 text-brand-khaki"
+                  }`}
                 >
-                  {species.imageUrl ? (
-                    <img src={species.imageUrl} alt="" className="h-8 w-8 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-cream text-xs font-bold text-brand-brown">
-                      {species.commonName.charAt(0)}
+                  {cat}
+                </button>
+              ))}
+            </div>
+            <input
+              type="text"
+              placeholder="Search species..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="mt-2 w-full rounded-lg border border-brand-khaki/30 px-3 py-2 text-sm focus:border-brand-gold focus:outline-none"
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto overscroll-contain px-1 py-2">
+            {allSpecies.isLoading ? (
+              <p className="py-4 text-center text-sm text-brand-khaki">Loading species...</p>
+            ) : filteredBrowseSpecies.length === 0 ? (
+              <p className="py-4 text-center text-sm text-brand-khaki">No species found.</p>
+            ) : (
+              <div className="space-y-0.5">
+                {filteredBrowseSpecies.map((species) => {
+                  const count = sightedMap.get(species.id) ?? 0;
+                  return (
+                    <button
+                      key={species.id}
+                      onClick={() => logSighting(species)}
+                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition active:scale-[0.98] active:bg-brand-gold/20"
+                    >
+                      <div className="relative shrink-0">
+                        <OfflineImage
+                          src={species.imageUrl}
+                          alt={species.commonName}
+                          className="h-12 w-12 rounded-xl object-cover"
+                          placeholderClassName="h-12 w-12 rounded-xl"
+                        />
+                        {count > 0 && (
+                          <div className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-green px-1 text-[10px] font-bold text-white shadow">
+                            {count}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className={`truncate text-sm font-medium ${count > 0 ? "text-brand-green" : "text-brand-dark"}`}>
+                          {species.commonName}
+                        </div>
+                        <div className="text-xs text-brand-khaki">{species.category}</div>
+                      </div>
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-green/15">
+                        <svg className="h-5 w-5 text-brand-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!browseOpen && (
+        <div className="flex-1 overflow-y-auto overscroll-contain p-2">
+          {sortedSpecies.length === 0 ? (
+            <div className="py-6 text-center">
+              <p className="text-sm text-brand-khaki">No sightings yet</p>
+              <button
+                onClick={() => setBrowseOpen(true)}
+                className="mt-2 text-sm font-medium text-brand-green"
+              >
+                Tap + to browse species
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2">
+              {sortedSpecies.map((species) => (
+                <div key={species.speciesId} className="relative">
+                  <button
+                    onClick={() => {
+                      if (longPressTarget !== species.speciesId) {
+                        logSighting({
+                          id: species.speciesId,
+                          commonName: species.commonName,
+                          category: species.category,
+                          imageUrl: species.imageUrl,
+                        });
+                      }
+                    }}
+                    onTouchStart={() => handleLongPressStart(species.speciesId)}
+                    onTouchEnd={handleLongPressEnd}
+                    onTouchCancel={handleLongPressEnd}
+                    onMouseDown={() => handleLongPressStart(species.speciesId)}
+                    onMouseUp={handleLongPressEnd}
+                    onMouseLeave={handleLongPressEnd}
+                    className="flex min-h-[80px] w-full flex-col items-center justify-center gap-1 rounded-xl bg-brand-cream/60 p-2 transition active:scale-95 active:bg-brand-gold/20"
+                  >
+                    {species.imageUrl ? (
+                      <img src={species.imageUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+                    ) : (
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-brown/20 text-sm font-bold text-brand-brown">
+                        {species.commonName.charAt(0)}
+                      </div>
+                    )}
+                    <span className="line-clamp-2 text-center text-xs font-medium leading-tight text-brand-dark">
+                      {species.commonName}
+                    </span>
+                  </button>
+                  <div className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-green px-1 text-xs font-bold text-white shadow">
+                    {species.count}
+                  </div>
+
+                  {longPressTarget === species.speciesId && (
+                    <div className="absolute inset-x-0 -bottom-10 z-10 flex justify-center gap-2">
+                      <button
+                        onClick={() => handleDecrement(species.speciesId)}
+                        className="rounded-lg bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg"
+                      >
+                        -1
+                      </button>
+                      <button
+                        onClick={() => setLongPressTarget(null)}
+                        className="rounded-lg bg-brand-dark px-3 py-1 text-xs font-bold text-white shadow-lg"
+                      >
+                        X
+                      </button>
                     </div>
                   )}
-                  <div>
-                    <span className="text-sm font-medium text-brand-dark">{species.commonName}</span>
-                    <span className="ml-2 text-xs text-brand-khaki">{species.category}</span>
-                  </div>
-                </button>
+                </div>
               ))}
             </div>
           )}
         </div>
       )}
-
-      <div className="flex-1 overflow-y-auto overscroll-contain p-2">
-        {sortedSpecies.length === 0 ? (
-          <div className="py-6 text-center">
-            <p className="text-sm text-brand-khaki">No sightings yet</p>
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="mt-2 text-sm font-medium text-brand-green"
-            >
-              Tap + to add a species
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-3 gap-2">
-            {sortedSpecies.map((species) => (
-              <div key={species.speciesId} className="relative">
-                <button
-                  onClick={() => {
-                    if (longPressTarget !== species.speciesId) {
-                      handleTap(species);
-                    }
-                  }}
-                  onTouchStart={() => handleLongPressStart(species.speciesId)}
-                  onTouchEnd={handleLongPressEnd}
-                  onTouchCancel={handleLongPressEnd}
-                  onMouseDown={() => handleLongPressStart(species.speciesId)}
-                  onMouseUp={handleLongPressEnd}
-                  onMouseLeave={handleLongPressEnd}
-                  className="flex min-h-[80px] w-full flex-col items-center justify-center gap-1 rounded-xl bg-brand-cream/60 p-2 transition active:scale-95 active:bg-brand-gold/20"
-                >
-                  {species.imageUrl ? (
-                    <img src={species.imageUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-brown/20 text-sm font-bold text-brand-brown">
-                      {species.commonName.charAt(0)}
-                    </div>
-                  )}
-                  <span className="line-clamp-2 text-center text-xs font-medium leading-tight text-brand-dark">
-                    {species.commonName}
-                  </span>
-                </button>
-                <div className="absolute -right-1 -top-1 flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-green px-1 text-xs font-bold text-white shadow">
-                  {species.count}
-                </div>
-
-                {longPressTarget === species.speciesId && (
-                  <div className="absolute inset-x-0 -bottom-10 z-10 flex justify-center gap-2">
-                    <button
-                      onClick={() => handleDecrement(species.speciesId)}
-                      className="rounded-lg bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg"
-                    >
-                      −1
-                    </button>
-                    <button
-                      onClick={() => setLongPressTarget(null)}
-                      className="rounded-lg bg-brand-dark px-3 py-1 text-xs font-bold text-white shadow-lg"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
 }

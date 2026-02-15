@@ -91,7 +91,7 @@ function StravaContent() {
       <div className="relative z-10 mx-auto max-w-3xl px-4 pb-8 pt-6 sm:px-6 lg:px-8">
         <h1 className="mb-4 text-xl font-bold text-white drop-shadow-md">Strava</h1>
 
-        {connected === "true" && (
+        {connected === "true" && stravaConfigured.data?.configured !== false && (
           <div className="mb-4 rounded-lg bg-brand-green/90 px-4 py-3 text-sm text-white backdrop-blur-sm">
             Strava account connected successfully.
           </div>

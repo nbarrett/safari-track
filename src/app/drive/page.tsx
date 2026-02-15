@@ -78,6 +78,7 @@ export default function DrivePage() {
   const [initialQuickSpecies, setInitialQuickSpecies] = useState<QuickSpecies[]>([]);
   const [hasActiveTrip, setHasActiveTrip] = useState(false);
   const [panelExpanded, setPanelExpanded] = useState(false);
+  const [localSightingCount, setLocalSightingCount] = useState(0);
 
   const utils = api.useUtils();
 
@@ -297,15 +298,7 @@ export default function DrivePage() {
       <div className="absolute bottom-0 left-1/2 z-[1000] w-full max-w-lg -translate-x-1/2 px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
         {isActive && !starting && (driveSession?.id ?? localDriveId) && (
           <div className="mb-3">
-            {panelExpanded ? (
-              <QuickSightingPanel
-                driveSessionId={(driveSession?.id ?? localDriveId)!}
-                currentPosition={currentPosition}
-                initialSpecies={initialQuickSpecies}
-                onSightingLogged={() => void utils.drive.active.invalidate()}
-                onCollapse={() => setPanelExpanded(false)}
-              />
-            ) : (
+            {!panelExpanded && (
               <button
                 onClick={() => setPanelExpanded(true)}
                 className="flex w-full items-center gap-2 rounded-2xl bg-white/95 px-3 py-2 shadow-xl backdrop-blur-sm"
@@ -316,13 +309,25 @@ export default function DrivePage() {
                   </svg>
                 </div>
                 <span className="flex-1 text-left text-sm font-semibold text-brand-dark">
-                  {sightingMarkers.length} sightings
+                  {localSightingCount > 0 ? `${localSightingCount} sightings` : `${sightingMarkers.length} sightings`}
                 </span>
                 <svg className="h-5 w-5 text-brand-khaki" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
                 </svg>
               </button>
             )}
+            <div className={panelExpanded ? "" : "hidden"}>
+              <QuickSightingPanel
+                driveSessionId={(driveSession?.id ?? localDriveId)!}
+                currentPosition={currentPosition}
+                initialSpecies={initialQuickSpecies}
+                onSightingLogged={(count) => {
+                  setLocalSightingCount(count);
+                  void utils.drive.active.invalidate();
+                }}
+                onCollapse={() => setPanelExpanded(false)}
+              />
+            </div>
           </div>
         )}
 
@@ -371,12 +376,12 @@ export default function DrivePage() {
               <span className="text-sm font-medium text-brand-dark">Starting game drive...</span>
             </div>
           ) : (
-            <div className="rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
-              <div className="flex items-center gap-2">
+            <div className="rounded-2xl bg-white/95 p-3 shadow-xl backdrop-blur-sm">
+              <div className="flex items-center gap-3">
                 {tracking ? (
                   <button
                     onClick={stopTracking}
-                    className="flex flex-col items-center gap-1 rounded-xl bg-brand-gold/20 px-3 py-3 transition active:scale-95"
+                    className="flex flex-1 flex-col items-center gap-1.5 rounded-xl bg-brand-gold/20 py-3 transition active:scale-95"
                   >
                     <svg className="h-6 w-6 text-brand-dark" fill="currentColor" viewBox="0 0 24 24">
                       <rect x="6" y="4" width="4" height="16" rx="1" />
@@ -387,18 +392,18 @@ export default function DrivePage() {
                 ) : (
                   <button
                     onClick={startTracking}
-                    className="flex flex-col items-center gap-1 rounded-xl bg-brand-green/20 px-3 py-3 transition active:scale-95"
+                    className="flex flex-1 flex-col items-center gap-1.5 rounded-xl bg-brand-green py-3 shadow-md transition active:scale-95"
                   >
-                    <svg className="h-6 w-6 text-brand-green" fill="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
                     </svg>
-                    <span className="text-xs font-semibold text-brand-green">Resume</span>
+                    <span className="text-xs font-bold text-white">Resume</span>
                   </button>
                 )}
 
                 <button
                   onClick={() => setShowTripSummary(true)}
-                  className="flex flex-col items-center gap-1 rounded-xl bg-brand-gold/10 px-3 py-3 transition active:scale-95"
+                  className="flex flex-1 flex-col items-center gap-1.5 rounded-xl bg-brand-gold/15 py-3 transition active:scale-95"
                 >
                   <svg className="h-6 w-6 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -409,12 +414,12 @@ export default function DrivePage() {
                 <button
                   onClick={handleEndDrive}
                   disabled={offlineEndDrive.isPending}
-                  className="ml-auto flex flex-col items-center gap-1 rounded-xl bg-red-50 px-3 py-3 transition active:scale-95 disabled:opacity-50"
+                  className="flex flex-1 flex-col items-center gap-1.5 rounded-xl bg-red-600 py-3 shadow-md transition active:scale-95 disabled:opacity-50"
                 >
-                  <svg className="h-6 w-6 text-red-600" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                     <rect x="4" y="4" width="16" height="16" rx="2" />
                   </svg>
-                  <span className="text-xs font-semibold text-red-600">
+                  <span className="text-xs font-bold text-white">
                     {offlineEndDrive.isPending ? "Ending..." : "Finish"}
                   </span>
                 </button>
