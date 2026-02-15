@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
 import { OfflineImage } from "~/app/_components/offline-image";
@@ -19,9 +20,23 @@ const CATEGORY_CARDS = [
 
 export default function ChecklistPage() {
   const { data: session, status } = useSession();
-  const [activeCategory, setActiveCategory] = useState("All");
-  const [showSpottedOnly, setShowSpottedOnly] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const cat = searchParams.get("category");
+    if (cat === "Mammal" || cat === "Bird" || cat === "Reptile") return cat;
+    return "All";
+  });
+  const [showSpottedOnly, setShowSpottedOnly] = useState(() => searchParams.get("spotted") === "1");
   const [searchQuery, setSearchQuery] = useState("");
+
+  const updateUrlParams = useCallback((category: string, spotted: boolean) => {
+    const params = new URLSearchParams();
+    if (category !== "All") params.set("category", category);
+    if (spotted) params.set("spotted", "1");
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "/checklist", { scroll: false });
+  }, [router]);
   const [expandedImage, setExpandedImage] = useState<{ url: string; name: string } | null>(null);
   const [thumbSize, setThumbSize] = useState<"sm" | "lg" | "max" | "xl">(() => {
     if (typeof window === "undefined") return "lg";
@@ -150,7 +165,7 @@ export default function ChecklistPage() {
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-6 sm:px-6 lg:px-8">
         <div className="flex min-h-0 flex-1 flex-col rounded-2xl bg-white/90 shadow-lg backdrop-blur-md">
           {/* Sticky header section */}
-          <div className="shrink-0 border-b border-brand-cream/60 p-4 sm:p-6 sm:pb-4">
+          <div className="shrink-0 border-b border-brand-cream/60 p-4 pr-14 sm:p-6 sm:pb-4 lg:pr-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Link
@@ -184,7 +199,7 @@ export default function ChecklistPage() {
             {session && stats.data && (
               <div className="mt-3 grid grid-cols-3 gap-2">
                 <button
-                  onClick={() => setShowSpottedOnly(true)}
+                  onClick={() => { setShowSpottedOnly(true); updateUrlParams(activeCategory, true); }}
                   className={`rounded-lg p-3 text-center transition ${
                     showSpottedOnly
                       ? "bg-brand-green/20 ring-2 ring-brand-green"
@@ -197,7 +212,7 @@ export default function ChecklistPage() {
                   <div className="text-xs text-brand-green/80">Spotted</div>
                 </button>
                 <button
-                  onClick={() => setShowSpottedOnly(false)}
+                  onClick={() => { setShowSpottedOnly(false); updateUrlParams(activeCategory, false); }}
                   className={`rounded-lg p-3 text-center shadow-sm transition ${
                     !showSpottedOnly
                       ? "bg-white/90 ring-2 ring-brand-brown"
@@ -210,7 +225,7 @@ export default function ChecklistPage() {
                   <div className="text-xs text-brand-khaki">Total Species</div>
                 </button>
                 <button
-                  onClick={() => setShowSpottedOnly(!showSpottedOnly)}
+                  onClick={() => { const next = !showSpottedOnly; setShowSpottedOnly(next); updateUrlParams(activeCategory, next); }}
                   className="rounded-lg bg-brand-gold/10 p-3 text-center transition hover:bg-brand-gold/20"
                 >
                   <div className="text-2xl font-bold text-brand-gold">
@@ -237,7 +252,7 @@ export default function ChecklistPage() {
                     key={card.key}
                     onClick={() => {
                       setActiveCategory(card.key);
-                      setShowSpottedOnly(false);
+                      updateUrlParams(card.key, showSpottedOnly);
                     }}
                     className={`relative overflow-hidden rounded-lg transition ${
                       activeCategory === card.key
@@ -288,7 +303,7 @@ export default function ChecklistPage() {
               />
               {session && (
                 <button
-                  onClick={() => setShowSpottedOnly(!showSpottedOnly)}
+                  onClick={() => { const next = !showSpottedOnly; setShowSpottedOnly(next); updateUrlParams(activeCategory, next); }}
                   className={`whitespace-nowrap rounded-full px-3 py-2 text-xs font-semibold transition ${
                     showSpottedOnly
                       ? "bg-brand-green text-white shadow-md"

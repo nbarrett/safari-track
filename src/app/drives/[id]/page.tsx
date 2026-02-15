@@ -52,11 +52,19 @@ export default function DriveDetailPage() {
   const [showFlythrough, setShowFlythrough] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<DrivePhoto | null>(null);
 
+  const utils = api.useUtils();
   const drive = api.drive.detail.useQuery({ id: driveId });
   const userProfile = api.user.me.useQuery(undefined, {
     enabled: status === "authenticated",
   });
   const distanceUnit = userProfile.data?.distanceUnit ?? "km";
+
+  const updateSighting = api.sighting.update.useMutation({
+    onSuccess: () => void utils.drive.detail.invalidate({ id: driveId }),
+  });
+  const deleteSighting = api.sighting.delete.useMutation({
+    onSuccess: () => void utils.drive.detail.invalidate({ id: driveId }),
+  });
 
   if (status === "loading") {
     return <div className="flex min-h-screen items-center justify-center text-brand-khaki">Loading...</div>;
@@ -117,12 +125,16 @@ export default function DriveDetailPage() {
       <PageBackdrop />
 
       <div className="relative z-10 pb-8">
-        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/drives" className="text-sm text-brand-gold hover:text-brand-gold/80">
-            &larr; Back to history
-          </Link>
-
-          <div className="mt-2 flex flex-wrap items-center gap-3">
+        <div className="mx-auto max-w-7xl px-4 pr-14 sm:px-6 lg:px-8 lg:pr-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/drives"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
             <h1 className="text-xl font-bold text-white drop-shadow-md">Drive Detail</h1>
             {routePoints.length > 1 && (
               <button
@@ -217,10 +229,38 @@ export default function DriveDetailPage() {
                     className="rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur"
                   >
                     <div className="flex items-center justify-between">
-                      <div className="font-medium text-brand-dark">
+                      <div className="min-w-0 flex-1 font-medium text-brand-dark">
                         {sighting.species.commonName}
                       </div>
-                      <div className="text-sm text-brand-khaki">x{sighting.count}</div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          onClick={() => {
+                            if (sighting.count <= 1) {
+                              deleteSighting.mutate({ id: sighting.id });
+                            } else {
+                              updateSighting.mutate({ id: sighting.id, count: sighting.count - 1 });
+                            }
+                          }}
+                          disabled={updateSighting.isPending || deleteSighting.isPending}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500/15 text-red-600 transition active:scale-90 active:bg-red-500/30"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                          </svg>
+                        </button>
+                        <span className="min-w-[2rem] text-center text-sm font-semibold text-brand-dark">
+                          x{sighting.count}
+                        </span>
+                        <button
+                          onClick={() => updateSighting.mutate({ id: sighting.id, count: sighting.count + 1 })}
+                          disabled={updateSighting.isPending}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-green/15 text-brand-green transition active:scale-90 active:bg-brand-green/30"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                     {sighting.notes && (
                       <div className="mt-1 text-sm text-brand-khaki">{sighting.notes}</div>

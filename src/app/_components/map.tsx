@@ -99,6 +99,42 @@ export function DriveMap({
   roadsVisibleRef.current = roadsVisible;
   const followUserRef = useRef(compactControls);
   const routeInitialisedRef = useRef(false);
+  const [heading, setHeading] = useState(0);
+  const headingRef = useRef(0);
+
+  useEffect(() => {
+    if (!compactControls) return;
+
+    const handler = (event: DeviceOrientationEvent) => {
+      const ios = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading;
+      let deg: number | null = null;
+      if (ios != null) {
+        deg = ios;
+      } else if (event.alpha != null && event.absolute) {
+        deg = (360 - event.alpha) % 360;
+      }
+      if (deg == null) return;
+      const rounded = Math.round(deg);
+      if (rounded !== headingRef.current) {
+        headingRef.current = rounded;
+        setHeading(rounded);
+      }
+    };
+
+    window.addEventListener("deviceorientationabsolute" as string, handler as EventListener);
+    window.addEventListener("deviceorientation", handler);
+    return () => {
+      window.removeEventListener("deviceorientationabsolute" as string, handler as EventListener);
+      window.removeEventListener("deviceorientation", handler);
+    };
+  }, [compactControls]);
+
+  const requestCompassPermission = () => {
+    const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
+    if (DOE.requestPermission) {
+      void DOE.requestPermission();
+    }
+  };
 
   useEffect(() => {
     if (!containerRef.current || mapRefToUse.current) return;
@@ -316,8 +352,11 @@ export function DriveMap({
       <div ref={containerRef} className={className} />
       {compactControls ? (
         <div className="absolute right-3 z-[1000] flex flex-col gap-2" style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg">
-            <svg className="h-9 w-9" viewBox="0 0 40 40" fill="none">
+          <button
+            onClick={requestCompassPermission}
+            className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition active:scale-95"
+          >
+            <svg className="h-9 w-9 transition-transform duration-200" viewBox="0 0 40 40" fill="none" style={{ transform: `rotate(${-heading}deg)` }}>
               <polygon points="20,4 17.5,9 22.5,9" fill="#1f2937" />
               <polygon points="20,36 22.5,31 17.5,31" fill="#ef4444" />
               <line x1="35" y1="20" x2="32" y2="20" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
@@ -328,7 +367,7 @@ export function DriveMap({
               <line x1="9" y1="31" x2="11.5" y2="28.5" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" />
               <text x="20" y="24" textAnchor="middle" fontSize="13" fontWeight="700" fontFamily="system-ui,-apple-system,sans-serif" fill="#1f2937">N</text>
             </svg>
-          </div>
+          </button>
           <button
             onClick={() => setSatelliteActive(!satelliteActive)}
             className={`flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition active:scale-95 ${satelliteActive ? "bg-brand-brown text-white" : "bg-white/90 text-brand-dark"}`}
