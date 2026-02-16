@@ -67,7 +67,7 @@ export default function DrivesPage() {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 pr-14 pb-8 pt-6 sm:px-6 lg:px-8 lg:pr-8">
+      <div className="relative z-10 mx-auto max-w-3xl px-4 pr-14 pb-8 sm:px-6 lg:px-8 lg:pr-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}>
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white drop-shadow-md">Drive History</h1>
           <div className="flex items-center gap-2">
