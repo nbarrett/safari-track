@@ -7,6 +7,7 @@ import {
   saveIdMapping,
   rewriteInput,
 } from "~/lib/offline-queue";
+import { getAllPendingPhotos, removePendingPhoto } from "~/lib/photo-store";
 import { vanillaClient } from "~/lib/trpc-vanilla";
 
 type SyncEventType = "sync-started" | "sync-complete" | "sync-failed" | "sync-progress";
@@ -138,9 +139,36 @@ function collectMergedIds(pending: QueuedMutation[]): Map<string, string[]> {
   return groups;
 }
 
+async function syncPendingPhotos(): Promise<void> {
+  const photos = await getAllPendingPhotos();
+
+  for (const photo of photos) {
+    try {
+      const formData = new FormData();
+      formData.append("photo", photo.blob, `${photo.id}.jpg`);
+      formData.append("driveId", photo.driveId);
+      if (photo.lat != null) formData.append("lat", photo.lat.toString());
+      if (photo.lng != null) formData.append("lng", photo.lng.toString());
+
+      const res = await fetch("/api/photos/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        await removePendingPhoto(photo.id);
+      }
+    } catch {
+      /* will retry on next sync */
+    }
+  }
+}
+
 export async function drainQueue(): Promise<void> {
   if (syncing || !navigator.onLine) return;
   syncing = true;
+
+  await syncPendingPhotos();
 
   const pending = await getAll();
   if (pending.length === 0) {

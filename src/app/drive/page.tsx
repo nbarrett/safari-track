@@ -10,6 +10,7 @@ import { api } from "~/trpc/react";
 import { useGpsTracker, clearPersistedBuffer } from "~/app/_components/gps-tracker";
 import { QuickSightingPanel } from "~/app/_components/quick-sighting";
 import { TripSummary } from "~/app/_components/trip-summary";
+import { PhotoCapture } from "~/app/_components/photo-capture";
 import { useOfflineMutation } from "~/lib/use-offline-mutation";
 import { generateTempId, enqueue } from "~/lib/offline-queue";
 import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints } from "~/lib/drive-store";
@@ -95,6 +96,7 @@ export default function DrivePage() {
   const [localSpeciesCount, setLocalSpeciesCount] = useState(0);
   const [routeOverview, setRouteOverview] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
+  const [showCamera, setShowCamera] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
   const router = useRouter();
 
@@ -135,6 +137,11 @@ export default function DrivePage() {
     lng: p.longitude,
   }));
 
+  const allSpecies = api.species.list.useQuery(undefined, {
+    staleTime: 24 * 60 * 60 * 1000,
+    gcTime: Infinity,
+  });
+
   const createPoiMutation = api.poi.create.useMutation({
     onSuccess: () => void utils.poi.list.invalidate(),
   });
@@ -143,6 +150,19 @@ export default function DrivePage() {
   const endDriveMutation = api.drive.end.useMutation();
   const discardDriveMutation = api.drive.discard.useMutation();
   const addRoutePointsMutation = api.drive.addRoutePoints.useMutation();
+
+  const createSightingMutation = api.sighting.create.useMutation();
+
+  const offlineCreateSighting = useOfflineMutation({
+    path: "sighting.create",
+    mutationFn: (input: {
+      driveSessionId: string;
+      speciesId: string;
+      latitude: number;
+      longitude: number;
+      count: number;
+    }) => createSightingMutation.mutateAsync(input),
+  });
 
   const sendingRef = useRef(false);
 
@@ -608,6 +628,16 @@ export default function DrivePage() {
                     <span className="text-xs font-semibold text-brand-gold">Trip</span>
                   </button>
                   <button
+                    onClick={() => setShowCamera(true)}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-500/10 py-2.5 transition active:scale-95"
+                  >
+                    <svg className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                    </svg>
+                    <span className="text-xs font-semibold text-blue-600">Photo</span>
+                  </button>
+                  <button
                     onClick={handleEndDrive}
                     disabled={offlineEndDrive.isPending}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-red-600/10 py-2.5 transition active:scale-95 disabled:opacity-50"
@@ -710,6 +740,36 @@ export default function DrivePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {showCamera && (driveSession?.id ?? localDriveId) && (
+        <PhotoCapture
+          driveId={(driveSession?.id ?? localDriveId)!}
+          currentPosition={currentPosition}
+          speciesList={(allSpecies.data ?? []).map((s) => ({
+            id: s.id,
+            commonName: s.commonName,
+            category: s.category,
+            imageUrl: s.imageUrl,
+          }))}
+          onSightingsConfirmed={(sightings, _photoUrl) => {
+            setShowCamera(false);
+            const pos = currentPosition ?? { lat: -24.25, lng: 31.15 };
+            for (const s of sightings) {
+              for (let i = 0; i < s.count; i++) {
+                offlineCreateSighting.mutate({
+                  driveSessionId: (driveSession?.id ?? localDriveId)!,
+                  speciesId: s.speciesId,
+                  latitude: pos.lat,
+                  longitude: pos.lng,
+                  count: 1,
+                });
+              }
+            }
+            void utils.drive.active.invalidate();
+          }}
+          onClose={() => setShowCamera(false)}
+        />
       )}
 
       {showTripSummary && (
