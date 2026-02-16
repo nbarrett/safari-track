@@ -25,6 +25,10 @@ if [ "$should_run" = true ]; then
     echo "Pre-push: no test script configured, skipping tests."
   fi
 
+  echo "Pre-push: checking for version bump..."
+  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  node "$SCRIPT_DIR/../scripts/auto-changelog.mjs" || true
+
   echo "Pre-push checks passed. Proceeding with push."
 else
   echo "Pre-push: target branch is not main or pre-main. Skipping checks."

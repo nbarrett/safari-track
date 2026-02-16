@@ -34,11 +34,22 @@ Co-Authored-By: Claude Sonnet <noreply@anthropic.com>
 ```
 
 ### pre-push
-Runs the test suite when pushing to `main` or `pre-main`.
+Runs the test suite and auto-bumps the app version when pushing to `main` or `pre-main`.
 
 **Behaviours:**
-- Blocks the push if tests fail.
+- Blocks the push if typecheck or tests fail.
 - Skips for other branches.
+- After checks pass, runs `scripts/auto-changelog.mjs` to auto-bump the version.
+
+### Auto-changelog (`scripts/auto-changelog.mjs`)
+Parses conventional commits since the last version bump and updates `src/lib/version.ts`.
+
+**Rules:**
+- `feat` commits trigger a **minor** version bump.
+- `fix` commits trigger a **patch** version bump.
+- `build`, `chore`, `ci`, `docs`, `test`, and `style` commits are ignored (no bump).
+- `refactor` entries are included in the changelog only if a feat/fix also triggered a bump.
+- Duplicate descriptions are deduplicated.
 
 ## How It Works
 
