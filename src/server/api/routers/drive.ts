@@ -158,6 +158,39 @@ export const driveRouter = createTRPCRouter({
       return { items, nextCursor };
     }),
 
+  addPhoto: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        photo: z.object({
+          url: z.string(),
+          lat: z.number().nullable(),
+          lng: z.number().nullable(),
+          caption: z.string().nullable(),
+        }),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const session = await ctx.db.driveSession.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!session) {
+        throw new Error("Drive session not found");
+      }
+
+      const existingPhotos = (session.photos ?? []).filter(
+        (p): p is Prisma.JsonObject => p !== null && typeof p === "object" && !Array.isArray(p),
+      );
+
+      return ctx.db.driveSession.update({
+        where: { id: input.id },
+        data: {
+          photos: [...existingPhotos, input.photo],
+        },
+      });
+    }),
+
   cleanRoutes: adminProcedure.mutation(async ({ ctx }) => {
     const MAX_SPEED_MS = 33;
     const NEAR_START_THRESHOLD_M = 200;
