@@ -33,6 +33,9 @@ export function Nav() {
     enabled: !!session,
   });
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
 
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
@@ -63,8 +66,8 @@ export function Nav() {
   }, [menuOpen]);
 
   const visibleItems = NAV_ITEMS.filter((item) => {
-    if ("adminOnly" in item && item.adminOnly) return session?.user?.role === "ADMIN";
-    if ("authOnly" in item && item.authOnly) return !!session;
+    if ("adminOnly" in item && item.adminOnly) return mounted && session?.user?.role === "ADMIN";
+    if ("authOnly" in item && item.authOnly) return mounted && !!session;
     return true;
   });
 
@@ -106,21 +109,21 @@ export function Nav() {
             >
               v{APP_VERSION}
             </Link>
-            {session ? (
+            {mounted && session ? (
               <button
                 onClick={() => void handleSignOut()}
                 className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
               >
                 Sign Out
               </button>
-            ) : (
+            ) : mounted ? (
               <Link
                 href="/auth/signin"
                 className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
               >
                 Sign In
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </nav>
@@ -221,14 +224,14 @@ export function Nav() {
               <OfflineIndicator />
               <PrecacheIndicator />
             </div>
-            {session ? (
+            {mounted && session ? (
               <button
                 onClick={() => void handleSignOut()}
                 className="text-lg font-medium text-white/50 transition hover:text-white"
               >
                 Sign Out
               </button>
-            ) : (
+            ) : mounted ? (
               <Link
                 href="/auth/signin"
                 onClick={closeMenu}
@@ -236,7 +239,7 @@ export function Nav() {
               >
                 Sign In
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
