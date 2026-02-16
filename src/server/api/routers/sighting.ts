@@ -59,6 +59,26 @@ export const sightingRouter = createTRPCRouter({
       return ctx.db.sighting.delete({ where: { id: input.id } });
     }),
 
+  decrementBySpecies: protectedProcedure
+    .input(
+      z.object({
+        driveSessionId: z.string(),
+        speciesId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const latest = await ctx.db.sighting.findFirst({
+        where: {
+          driveSessionId: input.driveSessionId,
+          speciesId: input.speciesId,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+      if (!latest) return null;
+      await ctx.db.sighting.delete({ where: { id: latest.id } });
+      return latest;
+    }),
+
   byDrive: protectedProcedure
     .input(z.object({ driveSessionId: z.string() }))
     .query(async ({ ctx, input }) => {

@@ -84,7 +84,7 @@ export function DriveMap({
   const internalMapRef = useRef<L.Map | null>(null);
   const mapRefToUse = externalMapRef ?? internalMapRef;
   const containerRef = useRef<HTMLDivElement>(null);
-  const polylineRef = useRef<L.Polyline | null>(null);
+  const polylineGroupRef = useRef<L.LayerGroup | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const photoMarkersRef = useRef<L.Marker[]>([]);
   const positionMarkerRef = useRef<L.Marker | null>(null);
@@ -299,24 +299,48 @@ export function DriveMap({
   useEffect(() => {
     if (!mapRefToUse.current) return;
 
-    if (polylineRef.current) {
-      polylineRef.current.remove();
+    if (polylineGroupRef.current) {
+      polylineGroupRef.current.clearLayers();
+    } else {
+      polylineGroupRef.current = L.layerGroup().addTo(mapRefToUse.current);
     }
 
     if (route.length > 0) {
-      const latlngs = route.map((p) => [p.lat, p.lng] as [number, number]);
-      polylineRef.current = L.polyline(latlngs, {
-        color: "#3b82f6",
-        weight: 4,
-        opacity: 0.8,
-      }).addTo(mapRefToUse.current);
+      const MAX_GAP_MS = 30_000;
+      const segments: [number, number][][] = [];
+      let currentSegment: [number, number][] = [];
+
+      for (let i = 0; i < route.length; i++) {
+        const point = route[i]!;
+        if (i > 0) {
+          const prev = route[i - 1]!;
+          const gap = new Date(point.timestamp).getTime() - new Date(prev.timestamp).getTime();
+          if (gap > MAX_GAP_MS) {
+            if (currentSegment.length > 1) {
+              segments.push(currentSegment);
+            }
+            currentSegment = [];
+          }
+        }
+        currentSegment.push([point.lat, point.lng]);
+      }
+      if (currentSegment.length > 1) {
+        segments.push(currentSegment);
+      }
+
+      let bounds: L.LatLngBounds | null = null;
+      for (const seg of segments) {
+        const pl = L.polyline(seg, { color: "#3b82f6", weight: 4, opacity: 0.8 });
+        polylineGroupRef.current.addLayer(pl);
+        bounds = bounds ? bounds.extend(pl.getBounds()) : pl.getBounds();
+      }
 
       if (compactControls) {
         if (!routeInitialisedRef.current) {
           routeInitialisedRef.current = true;
         }
-      } else {
-        mapRefToUse.current.fitBounds(polylineRef.current.getBounds(), { padding: [20, 20] });
+      } else if (bounds) {
+        mapRefToUse.current.fitBounds(bounds, { padding: [20, 20] });
       }
     }
   }, [route, compactControls]);
@@ -332,6 +356,7 @@ export function DriveMap({
         .addTo(mapRefToUse.current!)
         .bindPopup(
           `<strong>${s.speciesName}</strong><br/>Count: ${s.count}${s.notes ? `<br/>${s.notes}` : ""}`,
+          { autoPan: false },
         );
       markersRef.current.push(marker);
     });

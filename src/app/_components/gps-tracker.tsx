@@ -78,6 +78,7 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
     void getPersistedBuffer().then((persisted) => {
       if (persisted.length > 0) {
         onPointsRef.current(persisted);
+        void clearPersistedBuffer();
       }
     });
   }, [driveId]);
@@ -198,6 +199,7 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && trackingRef.current) {
+        lastAcceptedRef.current = null;
         beginWatch();
       }
     };

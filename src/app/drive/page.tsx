@@ -193,7 +193,13 @@ export default function DrivePage() {
   const driveSession = activeDrive.data;
   const elapsed = useDriveElapsed(driveSession?.startedAt ?? localStartedAt);
   const existingRoute = (driveSession?.route ?? []) as unknown as GpsPoint[];
-  const allRoutePoints = [...existingRoute, ...routePoints];
+  const allRoutePoints = useMemo(() => {
+    if (existingRoute.length === 0) return routePoints;
+    if (routePoints.length === 0) return existingRoute;
+    const lastServerTime = existingRoute[existingRoute.length - 1]?.timestamp ?? "";
+    const newLocalPoints = routePoints.filter((p) => p.timestamp > lastServerTime);
+    return [...existingRoute, ...newLocalPoints];
+  }, [existingRoute, routePoints]);
 
   const userProfile = api.user.me.useQuery(undefined, {
     enabled: status === "authenticated",

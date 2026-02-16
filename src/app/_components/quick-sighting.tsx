@@ -62,6 +62,7 @@ export function QuickSightingPanel({
   });
 
   const createSightingMutation = api.sighting.create.useMutation();
+  const decrementSightingMutation = api.sighting.decrementBySpecies.useMutation();
   const markChecklistMutation = api.checklist.markFromSighting.useMutation();
 
   const offlineMarkChecklist = useOfflineMutation({
@@ -86,6 +87,12 @@ export function QuickSightingPanel({
         longitude: input.longitude,
       });
     },
+  });
+
+  const offlineDecrementSighting = useOfflineMutation({
+    path: "sighting.decrementBySpecies",
+    mutationFn: (input: { driveSessionId: string; speciesId: string }) =>
+      decrementSightingMutation.mutateAsync(input),
   });
 
   const logSighting = useCallback(
@@ -152,9 +159,12 @@ export function QuickSightingPanel({
           .filter((s) => s.count > 0),
       );
       void updateTripSpecies(speciesId, "", "", null, -1);
+      offlineDecrementSighting.mutate({ driveSessionId, speciesId });
       setLongPressTarget(null);
+      const newTotal = quickSpecies.reduce((sum, s) => sum + s.count, 0) - 1;
+      onSightingLogged?.(Math.max(0, newTotal));
     },
-    [],
+    [driveSessionId, offlineDecrementSighting, quickSpecies, onSightingLogged],
   );
 
   const handleLongPressStart = (speciesId: string) => {
@@ -338,16 +348,16 @@ export function QuickSightingPanel({
                   </div>
 
                   {longPressTarget === species.speciesId && (
-                    <div className="absolute inset-x-0 -bottom-10 z-10 flex justify-center gap-2">
+                    <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-black/60">
                       <button
                         onClick={() => handleDecrement(species.speciesId)}
-                        className="rounded-lg bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white shadow-lg"
                       >
                         -1
                       </button>
                       <button
                         onClick={() => setLongPressTarget(null)}
-                        className="rounded-lg bg-brand-dark px-3 py-1 text-xs font-bold text-white shadow-lg"
+                        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-sm font-bold text-brand-dark shadow-lg"
                       >
                         X
                       </button>
