@@ -181,6 +181,15 @@ export default function DrivePage() {
       autoPause: true,
     });
 
+  const autoResumedRef = useRef(false);
+  useEffect(() => {
+    if (autoResumedRef.current) return;
+    if (!driveId) return;
+    if (tracking) return;
+    autoResumedRef.current = true;
+    startTracking();
+  }, [driveId, tracking, startTracking]);
+
   const driveSession = activeDrive.data;
   const elapsed = useDriveElapsed(driveSession?.startedAt ?? localStartedAt);
   const existingRoute = (driveSession?.route ?? []) as unknown as GpsPoint[];

@@ -101,15 +101,12 @@ export function DriveMap({
   const routeInitialisedRef = useRef(false);
   const [heading, setHeading] = useState(0);
   const headingRef = useRef(0);
-  const needsPermissionRef = useRef(
-    typeof window !== "undefined" &&
-    typeof (DeviceOrientationEvent as unknown as { requestPermission?: unknown }).requestPermission === "function",
-  );
-  const [compassPermitted, setCompassPermitted] = useState(!needsPermissionRef.current);
+  const [compassReceiving, setCompassReceiving] = useState(false);
+  const compassReceivingRef = useRef(false);
+  const cleanupCompassRef = useRef<(() => void) | null>(null);
 
-  useEffect(() => {
-    if (!compactControls) return;
-    if (needsPermissionRef.current && !compassPermitted) return;
+  const attachCompassListeners = () => {
+    if (cleanupCompassRef.current) cleanupCompassRef.current();
 
     const handler = (event: DeviceOrientationEvent) => {
       const ios = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading;
@@ -120,6 +117,10 @@ export function DriveMap({
         deg = event.absolute ? (360 - event.alpha) % 360 : event.alpha;
       }
       if (deg == null) return;
+      if (!compassReceivingRef.current) {
+        compassReceivingRef.current = true;
+        setCompassReceiving(true);
+      }
       const rounded = Math.round(deg);
       if (rounded !== headingRef.current) {
         headingRef.current = rounded;
@@ -129,19 +130,52 @@ export function DriveMap({
 
     window.addEventListener("deviceorientationabsolute" as string, handler as EventListener);
     window.addEventListener("deviceorientation", handler);
-    return () => {
+
+    const cleanup = () => {
       window.removeEventListener("deviceorientationabsolute" as string, handler as EventListener);
       window.removeEventListener("deviceorientation", handler);
+      cleanupCompassRef.current = null;
     };
-  }, [compactControls, compassPermitted]);
+    cleanupCompassRef.current = cleanup;
+    return cleanup;
+  };
+
+  useEffect(() => {
+    if (!compactControls) return;
+
+    const needsPermission =
+      typeof (DeviceOrientationEvent as unknown as { requestPermission?: unknown }).requestPermission === "function";
+
+    if (!needsPermission) {
+      const cleanup = attachCompassListeners();
+      return cleanup;
+    }
+  }, [compactControls]);
+
+  useEffect(() => {
+    if (!compactControls) return;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && compassReceivingRef.current) {
+        attachCompassListeners();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => document.removeEventListener("visibilitychange", handleVisibility);
+  }, [compactControls]);
 
   const requestCompassPermission = async () => {
     const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
     if (DOE.requestPermission) {
-      const result = await DOE.requestPermission();
-      if (result === "granted") {
-        setCompassPermitted(true);
+      try {
+        const result = await DOE.requestPermission();
+        if (result === "granted") {
+          attachCompassListeners();
+        }
+      } catch {
+        attachCompassListeners();
       }
+    } else if (!compassReceivingRef.current) {
+      attachCompassListeners();
     }
   };
 
@@ -363,10 +397,10 @@ export function DriveMap({
         <div className="absolute right-3 z-[1000] flex flex-col gap-2" style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
           <button
             onClick={() => void requestCompassPermission()}
-            className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition active:scale-95 ${compassPermitted ? "bg-white" : "bg-white/70 ring-2 ring-brand-gold"}`}
+            className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition active:scale-95 ${compassReceiving ? "bg-white" : "bg-white/70 ring-2 ring-brand-gold animate-pulse"}`}
           >
             <svg className="h-9 w-9 transition-transform duration-200" viewBox="0 0 40 40" fill="none" style={{ transform: `rotate(${-heading}deg)` }}>
-              <polygon points="20,4 17.5,9 22.5,9" fill={compassPermitted ? "#1f2937" : "#d97706"} />
+              <polygon points="20,4 17.5,9 22.5,9" fill={compassReceiving ? "#1f2937" : "#d97706"} />
               <polygon points="20,36 22.5,31 17.5,31" fill="#ef4444" />
               <line x1="35" y1="20" x2="32" y2="20" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
               <line x1="5" y1="20" x2="8" y2="20" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />

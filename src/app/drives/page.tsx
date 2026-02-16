@@ -34,8 +34,11 @@ export default function DrivesPage() {
   }
 
   const userId = session.user.id;
-  const ownedDrives = drives.data?.items.filter((d) => d.user.id === userId) ?? [];
-  const canSelect = ownedDrives.length > 0;
+  const isAdmin = session.user.role === "ADMIN";
+  const selectableDrives = isAdmin
+    ? drives.data?.items ?? []
+    : drives.data?.items.filter((d) => d.user.id === userId) ?? [];
+  const canSelect = selectableDrives.length > 0;
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -47,10 +50,10 @@ export default function DrivesPage() {
   };
 
   const toggleAll = () => {
-    if (selected.size === ownedDrives.length) {
+    if (selected.size === selectableDrives.length) {
       setSelected(new Set());
     } else {
-      setSelected(new Set(ownedDrives.map((d) => d.id)));
+      setSelected(new Set(selectableDrives.map((d) => d.id)));
     }
   };
 
@@ -94,7 +97,7 @@ export default function DrivesPage() {
                 onClick={toggleAll}
                 className="text-sm font-medium text-brand-brown transition hover:text-brand-dark"
               >
-                {selected.size === ownedDrives.length ? "Deselect all" : "Select all"}
+                {selected.size === selectableDrives.length ? "Deselect all" : "Select all"}
               </button>
               <span className="text-sm text-brand-khaki">
                 {selected.size} selected
@@ -140,7 +143,7 @@ export default function DrivesPage() {
         {drives.data && drives.data.items.length > 0 ? (
           <div className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
             {drives.data.items.map((drive) => {
-              const isOwned = drive.user.id === userId;
+              const isOwned = isAdmin || drive.user.id === userId;
               const isSelected = selected.has(drive.id);
 
               if (selecting) {

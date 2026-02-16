@@ -82,17 +82,15 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
     });
   }, [driveId]);
 
-  const startTracking = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError("Geolocation not supported");
-      return;
-    }
+  const trackingRef = useRef(false);
 
-    setError(null);
-    setTracking(true);
-    setAutoPaused(false);
-    lastAcceptedRef.current = null;
-    lastMovementRef.current = Date.now();
+  const beginWatch = useCallback(() => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+    }
+    if (flushIntervalRef.current) {
+      clearInterval(flushIntervalRef.current);
+    }
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (position) => {
@@ -159,7 +157,25 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
     }, intervalMs);
   }, [intervalMs]);
 
+  const startTracking = useCallback(() => {
+    if (!navigator.geolocation) {
+      setError("Geolocation not supported");
+      return;
+    }
+
+    setError(null);
+    setTracking(true);
+    trackingRef.current = true;
+    setAutoPaused(false);
+    lastAcceptedRef.current = null;
+    lastMovementRef.current = Date.now();
+
+    beginWatch();
+  }, [beginWatch]);
+
   const stopTracking = useCallback(() => {
+    trackingRef.current = false;
+
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
@@ -180,7 +196,14 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
   }, []);
 
   useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && trackingRef.current) {
+        beginWatch();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
     return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
@@ -188,7 +211,7 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
         clearInterval(flushIntervalRef.current);
       }
     };
-  }, []);
+  }, [beginWatch]);
 
   return { tracking, autoPaused, error, currentPosition, startTracking, stopTracking };
 }
