@@ -433,7 +433,7 @@ export default function DrivePage() {
 
       <div className="absolute bottom-0 left-1/2 z-[1000] w-full max-w-lg -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {isActive && !starting && (driveSession?.id ?? localDriveId) && (
-          <div className="mb-3">
+          <div className="mb-2">
             {!panelExpanded && (
               <button
                 onClick={() => setPanelExpanded(true)}
@@ -470,7 +470,7 @@ export default function DrivePage() {
 
         <div>
           {!isActive ? (
-            <div className="flex flex-col items-center gap-4 rounded-2xl bg-white/95 p-6 shadow-xl backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
               <div className="text-center">
                 <h2 className="text-lg font-bold text-brand-dark">Game Drive</h2>
                 <p className="mt-1 text-sm text-brand-khaki">
@@ -514,8 +514,8 @@ export default function DrivePage() {
             </div>
           ) : (
             <>
-              <div className="rounded-2xl bg-white/95 p-4 shadow-xl backdrop-blur-sm">
-                <div className="mb-3 flex items-end justify-between">
+              <div className="rounded-2xl bg-white/95 px-3 py-3 shadow-xl backdrop-blur-sm">
+                <div className="mb-2 flex items-end justify-between">
                   <div>
                     <div className="flex items-center gap-2">
                       <div className="font-mono text-3xl font-bold tabular-nums text-brand-dark">
@@ -560,7 +560,7 @@ export default function DrivePage() {
                 {tracking ? (
                   <button
                     onClick={stopTracking}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-gold py-3.5 shadow-md transition active:scale-[0.98]"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-gold py-2.5 shadow-md transition active:scale-[0.98]"
                   >
                     <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <rect x="6" y="4" width="4" height="16" rx="1" />
@@ -571,7 +571,7 @@ export default function DrivePage() {
                 ) : (
                   <button
                     onClick={startTracking}
-                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-3.5 shadow-md transition active:scale-[0.98]"
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-brand-green py-2.5 shadow-md transition active:scale-[0.98]"
                   >
                     <svg className="h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M8 5v14l11-7z" />
