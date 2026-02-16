@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.6.0";
+export const APP_VERSION = "1.7.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.7.0",
+    date: "16 Feb 2026",
+    title: "New features and fixes",
+    changes: [
+      "Extract EXIF date/location from photos for backdated sightings",
+      "Nav hydration mismatch between server and client",
+    ],
+  },
   {
     version: "1.6.0",
     date: "16 Feb 2026",
