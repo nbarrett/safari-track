@@ -223,14 +223,38 @@ export default function DriveDetailPage() {
 
             {drive.data.sightings.length > 0 ? (
               <div className="space-y-2">
-                {drive.data.sightings.map((sighting) => (
-                  <div
-                    key={sighting.id}
-                    className="rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="min-w-0 flex-1 font-medium text-brand-dark">
-                        {sighting.species.commonName}
+                {drive.data.sightings.map((sighting) => {
+                  const imgSrc = sighting.imageUrl ?? sighting.species.imageUrl;
+                  const isHeard = sighting.notes === "Heard only";
+                  const displayNotes = isHeard ? null : sighting.notes;
+
+                  return (
+                    <div
+                      key={sighting.id}
+                      className="flex items-center gap-3 rounded-lg bg-white/90 p-2.5 shadow-sm backdrop-blur"
+                    >
+                      <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
+                        <OfflineImage
+                          src={imgSrc}
+                          alt={sighting.species.commonName}
+                          className="h-12 w-12 object-cover"
+                          placeholderClassName="h-12 w-12"
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate text-sm font-medium text-brand-dark">
+                            {sighting.species.commonName}
+                          </span>
+                          {isHeard && (
+                            <span className="shrink-0 rounded bg-brand-cream px-1.5 py-0.5 text-[10px] font-medium text-brand-khaki">
+                              Heard
+                            </span>
+                          )}
+                        </div>
+                        {displayNotes && (
+                          <div className="truncate text-xs text-brand-khaki">{displayNotes}</div>
+                        )}
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
                         <button
@@ -244,32 +268,26 @@ export default function DriveDetailPage() {
                           disabled={updateSighting.isPending || deleteSighting.isPending}
                           className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500/15 text-red-600 transition active:scale-90 active:bg-red-500/30"
                         >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
                           </svg>
                         </button>
-                        <span className="min-w-[2rem] text-center text-sm font-semibold text-brand-dark">
-                          x{sighting.count}
+                        <span className="min-w-[1.75rem] text-center text-sm font-semibold text-brand-dark">
+                          {sighting.count}
                         </span>
                         <button
                           onClick={() => updateSighting.mutate({ id: sighting.id, count: sighting.count + 1 })}
                           disabled={updateSighting.isPending}
                           className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-green/15 text-brand-green transition active:scale-90 active:bg-brand-green/30"
                         >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                           </svg>
                         </button>
                       </div>
                     </div>
-                    {sighting.notes && (
-                      <div className="mt-1 text-sm text-brand-khaki">{sighting.notes}</div>
-                    )}
-                    <div className="mt-1 text-xs text-brand-khaki/60">
-                      {sighting.latitude.toFixed(5)}, {sighting.longitude.toFixed(5)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-sm text-white/60">No sightings recorded during this drive.</p>
