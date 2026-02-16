@@ -21,7 +21,7 @@ interface QuickSightingPanelProps {
   driveSessionId: string;
   currentPosition: { lat: number; lng: number } | null;
   initialSpecies?: QuickSpecies[];
-  onSightingLogged?: (totalCount: number) => void;
+  onSightingLogged?: (totalCount: number, speciesCount: number) => void;
   onCollapse?: () => void;
 }
 
@@ -45,6 +45,7 @@ export function QuickSightingPanel({
   const [browseOpen, setBrowseOpen] = useState(true);
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [longPressTarget, setLongPressTarget] = useState<string | null>(null);
+  const [confirmDecrement, setConfirmDecrement] = useState<string | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const initialRef = useRef(true);
 
@@ -79,6 +80,7 @@ export function QuickSightingPanel({
       latitude: number;
       longitude: number;
       count: number;
+      notes?: string;
     }) => createSightingMutation.mutateAsync(input),
     onSuccess: (_result, input) => {
       offlineMarkChecklist.mutate({
@@ -96,7 +98,7 @@ export function QuickSightingPanel({
   });
 
   const logSighting = useCallback(
-    (species: { id: string; commonName: string; category: string; imageUrl: string | null }) => {
+    (species: { id: string; commonName: string; category: string; imageUrl: string | null }, heardOnly = false) => {
       triggerHaptic();
       const pos = currentPosition ?? { lat: -24.25, lng: 31.15 };
 
@@ -125,6 +127,7 @@ export function QuickSightingPanel({
 
       void updateTripSpecies(species.id, species.commonName, species.category, species.imageUrl, 1);
 
+      const notes = heardOnly ? "Heard only" : undefined;
       const sightingId = generateTempId();
       void addLocalSighting({
         id: sightingId,
@@ -132,6 +135,7 @@ export function QuickSightingPanel({
         latitude: pos.lat,
         longitude: pos.lng,
         count: 1,
+        notes,
       });
 
       offlineCreateSighting.mutate({
@@ -140,17 +144,21 @@ export function QuickSightingPanel({
         latitude: pos.lat,
         longitude: pos.lng,
         count: 1,
+        notes,
       });
 
+      const newSpeciesCount = existing ? quickSpecies.length : quickSpecies.length + 1;
       const newTotal = quickSpecies.reduce((sum, s) => sum + s.count, 0) + 1;
-      onSightingLogged?.(newTotal);
+      onSightingLogged?.(newTotal, newSpeciesCount);
     },
     [currentPosition, driveSessionId, offlineCreateSighting, quickSpecies, onSightingLogged],
   );
 
-  const handleDecrement = useCallback(
+  const handleDecrementConfirm = useCallback(
     (speciesId: string) => {
       triggerHaptic();
+      const target = quickSpecies.find((s) => s.speciesId === speciesId);
+      const willRemove = target?.count === 1;
       setQuickSpecies((prev) =>
         prev
           .map((s) =>
@@ -160,9 +168,11 @@ export function QuickSightingPanel({
       );
       void updateTripSpecies(speciesId, "", "", null, -1);
       offlineDecrementSighting.mutate({ driveSessionId, speciesId });
+      setConfirmDecrement(null);
       setLongPressTarget(null);
       const newTotal = quickSpecies.reduce((sum, s) => sum + s.count, 0) - 1;
-      onSightingLogged?.(Math.max(0, newTotal));
+      const newSpeciesCount = willRemove ? quickSpecies.length - 1 : quickSpecies.length;
+      onSightingLogged?.(Math.max(0, newTotal), newSpeciesCount);
     },
     [driveSessionId, offlineDecrementSighting, quickSpecies, onSightingLogged],
   );
@@ -259,36 +269,58 @@ export function QuickSightingPanel({
                 {filteredBrowseSpecies.map((species) => {
                   const count = sightedMap.get(species.id) ?? 0;
                   return (
-                    <button
+                    <div
                       key={species.id}
-                      onClick={() => logSighting(species)}
-                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left transition active:scale-[0.98] active:bg-brand-gold/20"
+                      className="flex w-full items-center gap-3 rounded-xl px-2 py-2 text-left"
                     >
-                      <div className="relative shrink-0">
-                        <OfflineImage
-                          src={species.imageUrl}
-                          alt={species.commonName}
-                          className="h-12 w-12 rounded-xl object-cover"
-                          placeholderClassName="h-12 w-12 rounded-xl"
-                        />
-                        {count > 0 && (
-                          <div className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-green px-1 text-[10px] font-bold text-white shadow">
-                            {count}
-                          </div>
-                        )}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className={`truncate text-sm font-medium ${count > 0 ? "text-brand-green" : "text-brand-dark"}`}>
-                          {species.commonName}
+                      <button
+                        onClick={() => logSighting(species)}
+                        className="flex min-w-0 flex-1 items-center gap-3 transition active:scale-[0.98] active:bg-brand-gold/20"
+                      >
+                        <div className="relative shrink-0">
+                          <OfflineImage
+                            src={species.imageUrl}
+                            alt={species.commonName}
+                            className="h-12 w-12 rounded-xl object-cover"
+                            placeholderClassName="h-12 w-12 rounded-xl"
+                          />
+                          {count > 0 && (
+                            <div className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-green px-1 text-[10px] font-bold text-white shadow">
+                              {count}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-xs text-brand-khaki">{species.category}</div>
-                      </div>
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-green/15">
+                        <div className="min-w-0 flex-1">
+                          <div className={`truncate text-sm font-medium ${count > 0 ? "text-brand-green" : "text-brand-dark"}`}>
+                            {species.commonName}
+                          </div>
+                          <div className="flex items-center gap-1 text-xs text-brand-khaki">
+                            <span>{species.category}</span>
+                            {count > 0 && (
+                              <span className="rounded bg-brand-green/15 px-1 py-0.5 text-[10px] font-semibold text-brand-green">Seen</span>
+                            )}
+                          </div>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => logSighting(species, true)}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-gold/15 transition active:scale-95"
+                        title="Heard only"
+                      >
+                        <svg className="h-5 w-5 text-brand-gold" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => logSighting(species)}
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-green/15 transition active:scale-95"
+                        title="Seen"
+                      >
                         <svg className="h-5 w-5 text-brand-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                         </svg>
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   );
                 })}
               </div>
@@ -347,10 +379,10 @@ export function QuickSightingPanel({
                     {species.count}
                   </div>
 
-                  {longPressTarget === species.speciesId && (
+                  {longPressTarget === species.speciesId && confirmDecrement !== species.speciesId && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center gap-2 rounded-xl bg-black/60">
                       <button
-                        onClick={() => handleDecrement(species.speciesId)}
+                        onClick={() => setConfirmDecrement(species.speciesId)}
                         className="flex h-10 w-10 items-center justify-center rounded-full bg-red-500 text-sm font-bold text-white shadow-lg"
                       >
                         -1
@@ -361,6 +393,25 @@ export function QuickSightingPanel({
                       >
                         X
                       </button>
+                    </div>
+                  )}
+                  {confirmDecrement === species.speciesId && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-xl bg-black/70">
+                      <span className="text-[10px] font-semibold text-white">Remove?</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleDecrementConfirm(species.speciesId)}
+                          className="rounded-lg bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          onClick={() => { setConfirmDecrement(null); setLongPressTarget(null); }}
+                          className="rounded-lg bg-white/90 px-3 py-1 text-xs font-bold text-brand-dark shadow-lg"
+                        >
+                          No
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

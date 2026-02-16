@@ -87,6 +87,7 @@ export default function DrivePage() {
   const [hasActiveTrip, setHasActiveTrip] = useState(false);
   const [panelExpanded, setPanelExpanded] = useState(false);
   const [localSightingCount, setLocalSightingCount] = useState(0);
+  const [localSpeciesCount, setLocalSpeciesCount] = useState(0);
   const [routeOverview, setRouteOverview] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
@@ -103,6 +104,7 @@ export default function DrivePage() {
           setInitialQuickSpecies(drive.speciesSummary);
           const total = drive.speciesSummary.reduce((sum, s) => sum + s.count, 0);
           setLocalSightingCount(total);
+          setLocalSpeciesCount(drive.speciesSummary.length);
         }
       }
     });
@@ -398,7 +400,7 @@ export default function DrivePage() {
                   </svg>
                 </div>
                 <span className="flex-1 text-left text-sm font-semibold text-brand-dark">
-                  {totalSightingCount} sightings
+                  {localSpeciesCount} species · {totalSightingCount} sightings
                 </span>
                 <svg className="h-5 w-5 text-brand-khaki" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
@@ -410,8 +412,9 @@ export default function DrivePage() {
                 driveSessionId={(driveSession?.id ?? localDriveId)!}
                 currentPosition={currentPosition}
                 initialSpecies={initialQuickSpecies}
-                onSightingLogged={(count) => {
+                onSightingLogged={(count, speciesCount) => {
                   setLocalSightingCount(count);
+                  setLocalSpeciesCount(speciesCount);
                   void utils.drive.active.invalidate();
                 }}
                 onCollapse={() => setPanelExpanded(false)}
