@@ -139,7 +139,7 @@ export function Nav() {
         </nav>
       )}
       {!hideMobileBar && (
-        <div className="h-[env(safe-area-inset-top)] lg:hidden" />
+        <div className="h-[calc(env(safe-area-inset-top)+3.5rem)] lg:hidden" />
       )}
 
       <div

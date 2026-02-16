@@ -15,6 +15,7 @@ export default function DrivesPage() {
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showMineOnly, setShowMineOnly] = useState(false);
 
   const deleteMany = api.drive.deleteMany.useMutation({
     onSuccess: () => {
@@ -67,7 +68,7 @@ export default function DrivesPage() {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 pr-14 pb-8 sm:px-6 lg:px-8 lg:pr-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 1.5rem)" }}>
+      <div className="relative z-10 mx-auto max-w-3xl px-4 pr-14 pt-4 pb-8 sm:px-6 lg:px-8 lg:pr-8">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white drop-shadow-md">Drive History</h1>
           <div className="flex items-center gap-2">
@@ -89,6 +90,27 @@ export default function DrivesPage() {
             )}
           </div>
         </div>
+
+        {!selecting && (
+          <div className="mb-3 flex gap-1 rounded-lg bg-white/15 p-1 backdrop-blur-sm">
+            <button
+              onClick={() => setShowMineOnly(false)}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                !showMineOnly ? "bg-white/90 text-brand-dark shadow-sm" : "text-white/70 hover:text-white"
+              }`}
+            >
+              Everyone
+            </button>
+            <button
+              onClick={() => setShowMineOnly(true)}
+              className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition ${
+                showMineOnly ? "bg-white/90 text-brand-dark shadow-sm" : "text-white/70 hover:text-white"
+              }`}
+            >
+              Mine
+            </button>
+          </div>
+        )}
 
         {selecting && (
           <div className="mb-3 flex items-center justify-between rounded-lg bg-white/90 px-4 py-3 shadow-sm backdrop-blur">
@@ -142,7 +164,9 @@ export default function DrivesPage() {
 
         {drives.data && drives.data.items.length > 0 ? (
           <div className="space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
-            {drives.data.items.map((drive) => {
+            {drives.data.items
+            .filter((d) => !showMineOnly || d.user.id === userId)
+            .map((drive) => {
               const isOwned = isAdmin || drive.user.id === userId;
               const isSelected = selected.has(drive.id);
 
