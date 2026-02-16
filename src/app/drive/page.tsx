@@ -13,8 +13,8 @@ import { TripSummary } from "~/app/_components/trip-summary";
 import { PhotoCapture } from "~/app/_components/photo-capture";
 import { useOfflineMutation } from "~/lib/use-offline-mutation";
 import { generateTempId, enqueue } from "~/lib/offline-queue";
-import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints } from "~/lib/drive-store";
-import { getActiveTrip, addDriveToTrip, setActiveTrip, type TripSpecies } from "~/lib/trip-store";
+import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints, addLocalSighting } from "~/lib/drive-store";
+import { getActiveTrip, addDriveToTrip, setActiveTrip, updateTripSpecies, type TripSpecies } from "~/lib/trip-store";
 import { haversineDistance } from "~/lib/drive-stats";
 import {
   requestNotificationPermission,
@@ -755,17 +755,29 @@ export default function DrivePage() {
           onSightingsConfirmed={(sightings, _photoUrl) => {
             setShowCamera(false);
             const pos = currentPosition ?? { lat: -24.25, lng: 31.15 };
+            let addedSightings = 0;
+            const seenSpeciesIds = new Set(initialQuickSpecies.map((s) => s.speciesId));
             for (const s of sightings) {
-              for (let i = 0; i < s.count; i++) {
-                offlineCreateSighting.mutate({
-                  driveSessionId: (driveSession?.id ?? localDriveId)!,
-                  speciesId: s.speciesId,
-                  latitude: pos.lat,
-                  longitude: pos.lng,
-                  count: 1,
-                });
-              }
+              offlineCreateSighting.mutate({
+                driveSessionId: (driveSession?.id ?? localDriveId)!,
+                speciesId: s.speciesId,
+                latitude: pos.lat,
+                longitude: pos.lng,
+                count: s.count,
+              });
+              void addLocalSighting({
+                id: generateTempId(),
+                speciesId: s.speciesId,
+                latitude: pos.lat,
+                longitude: pos.lng,
+                count: s.count,
+              });
+              void updateTripSpecies(s.speciesId, s.commonName, s.category, s.imageUrl, s.count);
+              addedSightings += s.count;
+              seenSpeciesIds.add(s.speciesId);
             }
+            setLocalSightingCount((prev) => prev + addedSightings);
+            setLocalSpeciesCount(seenSpeciesIds.size);
             void utils.drive.active.invalidate();
           }}
           onClose={() => setShowCamera(false)}
