@@ -12,6 +12,8 @@
   --color-brand-cream: #EDE4D9;
   --color-brand-dark: #2F2F2F;
   --color-brand-teal: #468189;
+
+  --animate-slide-up: slide-up 0.3s ease-out;
 }
 
 html {
@@ -21,6 +23,15 @@ html {
 @keyframes loader-spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
   }
 }
 

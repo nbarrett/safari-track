@@ -6,7 +6,7 @@ import { Geist } from "next/font/google";
 import { TRPCReactProvider } from "~/trpc/react";
 import { AuthSessionProvider } from "~/app/_components/session-provider";
 import { Nav } from "~/app/_components/nav";
-import { SafariPrompt } from "~/app/_components/safari-prompt";
+import { InstallPrompt } from "~/app/_components/install-prompt";
 import { SwProvider } from "~/app/_components/sw-provider";
 import { SyncIndicator } from "~/app/_components/sync-indicator";
 import { LoaderDismiss } from "~/app/_components/loader-dismiss";
@@ -89,7 +89,7 @@ export default function RootLayout({
           <TRPCReactProvider>
             <SwProvider>
               <LoaderDismiss />
-              <SafariPrompt />
+              <InstallPrompt />
               <Nav />
               <OfflineErrorBoundary>
                 {children}
