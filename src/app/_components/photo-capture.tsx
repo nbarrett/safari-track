@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { savePendingPhoto } from "~/lib/photo-store";
 
 interface Detection {
@@ -44,11 +44,8 @@ export function PhotoCapture({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleFileSelect = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
+  const processPhoto = useCallback(
+    async (file: File) => {
       const objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
 
@@ -114,6 +111,51 @@ export function PhotoCapture({
     },
     [driveId, currentPosition, speciesList],
   );
+
+  const handleFileSelect = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      await processPhoto(file);
+    },
+    [processPhoto],
+  );
+
+  const handlePaste = useCallback(async () => {
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imageType = item.types.find((t) => t.startsWith("image/"));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          const file = new File([blob], `paste_${Date.now()}.jpg`, { type: imageType });
+          await processPhoto(file);
+          return;
+        }
+      }
+    } catch {
+      /* clipboard read denied or empty */
+    }
+  }, [processPhoto]);
+
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (state !== "idle") return;
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i]!;
+        if (item.type.startsWith("image/")) {
+          e.preventDefault();
+          const blob = item.getAsFile();
+          if (blob) void processPhoto(blob);
+          return;
+        }
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  }, [state, processPhoto]);
 
   const handleCountChange = (index: number, delta: number) => {
     setDetections((prev) =>
@@ -184,16 +226,32 @@ export function PhotoCapture({
         <div className="p-4">
           {state === "idle" && !preview && (
             <div className="flex flex-col items-center gap-4 py-8">
-              <button
-                onClick={openCamera}
-                className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-green shadow-lg transition active:scale-95"
-              >
-                <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-                </svg>
-              </button>
-              <p className="text-sm text-brand-khaki">Tap to take a photo</p>
+              <div className="flex items-center gap-6">
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={openCamera}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-brand-green shadow-lg transition active:scale-95"
+                  >
+                    <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+                    </svg>
+                  </button>
+                  <span className="text-xs text-brand-khaki">Camera</span>
+                </div>
+                <div className="flex flex-col items-center gap-2">
+                  <button
+                    onClick={() => void handlePaste()}
+                    className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-500 shadow-lg transition active:scale-95"
+                  >
+                    <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.666 3.888A2.25 2.25 0 0013.5 2.25h-3c-1.03 0-1.9.693-2.166 1.638m7.332 0c.055.194.084.4.084.612v0a.75.75 0 01-.75.75H9.75a.75.75 0 01-.75-.75v0c0-.212.03-.418.084-.612m7.332 0c.646.049 1.288.11 1.927.184 1.1.128 1.907 1.077 1.907 2.185V19.5a2.25 2.25 0 01-2.25 2.25H6.75A2.25 2.25 0 014.5 19.5V6.257c0-1.108.806-2.057 1.907-2.185a48.208 48.208 0 011.927-.184" />
+                    </svg>
+                  </button>
+                  <span className="text-xs text-brand-khaki">Paste</span>
+                </div>
+              </div>
+              <p className="text-xs text-brand-khaki/60">or press Ctrl+V to paste from clipboard</p>
             </div>
           )}
 
