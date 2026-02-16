@@ -15,8 +15,8 @@ const CATEGORY_CARDS = [
   { key: "All", label: "All Species", image: "/hero-elephants.jpg" },
   { key: "Mammal", label: "Mammal", image: "/images/mammals.jpg" },
   { key: "Bird", label: "Bird", image: "/images/birds.jpg" },
-  { key: "Reptile", label: "Reptile", image: "/hero-rhinos.webp" },
-  { key: "Creepy Crawlies", label: "Creepy Crawlies", image: "/hero-elephants.jpg" },
+  { key: "Reptile", label: "Reptile", image: "/images/reptiles.jpg" },
+  { key: "Creepy Crawlies", label: "Creepy Crawlies", image: "/images/creepy-crawlies.jpg" },
 ];
 
 export default function ChecklistPage() {
