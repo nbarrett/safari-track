@@ -146,10 +146,6 @@ export function Nav() {
           </div>
         </nav>
       )}
-      {!hideMobileBar && (
-        <div className="h-[calc(env(safe-area-inset-top)+3.5rem)] lg:hidden" />
-      )}
-
       <div
         className={`fixed inset-0 z-[9999] flex flex-col bg-brand-brown transition-opacity duration-200 lg:hidden ${
           menuOpen ? "opacity-100" : "pointer-events-none opacity-0"

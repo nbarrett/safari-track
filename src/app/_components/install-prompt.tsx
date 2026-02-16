@@ -22,6 +22,7 @@ type PromptState =
 export function InstallPrompt() {
   const [state, setState] = useState<PromptState | null>(null);
   const [show, setShow] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
   const timerFired = useRef(false);
@@ -69,6 +70,7 @@ export function InstallPrompt() {
 
   const dismiss = () => {
     setShow(false);
+    setShowGuide(false);
     if (state.kind === "stale") {
       markVersionSeen();
     } else {
@@ -77,77 +79,96 @@ export function InstallPrompt() {
   };
 
   const handleInstall = async () => {
-    if (!deferredPrompt.current) return;
-    await deferredPrompt.current.prompt();
-    const choice = await deferredPrompt.current.userChoice;
-    if (choice.outcome === "accepted") {
-      setShow(false);
+    if (deferredPrompt.current) {
+      await deferredPrompt.current.prompt();
+      const choice = await deferredPrompt.current.userChoice;
+      if (choice.outcome === "accepted") {
+        setShow(false);
+      }
+      deferredPrompt.current = null;
+    } else {
+      setShowGuide(true);
     }
-    deferredPrompt.current = null;
   };
 
+  const scenario = state.kind === "scenario" ? state.scenario : null;
+  const isIos = scenario === "ios-safari" || scenario === "ios-non-safari";
+
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[9997] translate-y-0 animate-slide-up bg-brand-dark px-4 py-4 text-sm text-white shadow-lg transition-transform">
-      <div className="mx-auto flex max-w-lg items-center gap-3">
-        <div className="flex-1">
-          <BannerContent state={state} />
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          {deferredPrompt.current && (
+    <>
+      <div className="fixed inset-x-0 bottom-0 z-[9997] translate-y-0 animate-slide-up bg-brand-dark px-4 py-4 text-sm text-white shadow-lg transition-transform">
+        <div className="mx-auto flex max-w-lg items-center gap-3">
+          <div className="flex-1">
+            <p>Install Safari Track for quick access and offline use.</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             <button
-              onClick={handleInstall}
+              onClick={() => void handleInstall()}
               className="rounded-md bg-brand-gold px-3 py-1.5 font-medium text-brand-dark"
             >
-              Install
+              {isIos ? "Add" : "Install"}
             </button>
-          )}
-          <button
-            onClick={dismiss}
-            className="p-1 text-white/60 hover:text-white"
-            aria-label="Dismiss"
-          >
-            <XIcon />
-          </button>
+            <button
+              onClick={dismiss}
+              className="p-1 text-white/60 hover:text-white"
+              aria-label="Dismiss"
+            >
+              <XIcon />
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+
+      {showGuide && (
+        <div
+          className="fixed inset-0 z-[9998] flex items-end justify-center bg-black/60 pb-20"
+          onClick={dismiss}
+        >
+          <div
+            className="mx-4 max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 text-4xl">
+              {scenario === "ios-non-safari" ? "🧭" : "📲"}
+            </div>
+            {scenario === "ios-non-safari" ? (
+              <>
+                <p className="mb-2 text-lg font-semibold text-brand-dark">
+                  Open in Safari
+                </p>
+                <p className="text-sm text-brand-khaki">
+                  To add Safari Track to your home screen, open this page in{" "}
+                  <strong>Safari</strong> then tap{" "}
+                  <ShareIcon /> and select <strong>Add to Home Screen</strong>.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mb-2 text-lg font-semibold text-brand-dark">
+                  Add to Home Screen
+                </p>
+                <p className="text-sm text-brand-khaki">
+                  Tap the <ShareIcon /> button in Safari&apos;s toolbar below, then
+                  select <strong>Add to Home Screen</strong>.
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <svg className="h-8 w-8 animate-bounce text-brand-brown" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </div>
+              </>
+            )}
+            <button
+              onClick={dismiss}
+              className="mt-4 rounded-lg bg-brand-cream px-6 py-2 text-sm font-medium text-brand-brown"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
-}
-
-function BannerContent({ state }: { state: PromptState }) {
-  if (state.kind === "stale") {
-    return (
-      <p>
-        Safari Track has been updated &mdash; re-add to your home screen for the
-        latest version.
-      </p>
-    );
-  }
-
-  switch (state.scenario) {
-    case "android":
-      return <p>Install Safari Track for quick access and offline use.</p>;
-    case "ios-safari":
-      return (
-        <p>
-          Add Safari Track: tap{" "}
-          <ShareIcon /> then <strong>Add to Home Screen</strong>.
-        </p>
-      );
-    case "ios-non-safari":
-      return (
-        <p>
-          For the best experience, open this app in <strong>Safari</strong> and
-          tap <strong>Share &rarr; Add to Home Screen</strong>.
-        </p>
-      );
-    case "desktop":
-      return (
-        <p>
-          Install Safari Track: click the install icon in your browser&apos;s address bar, or use the browser menu.
-        </p>
-      );
-  }
 }
 
 function ShareIcon() {
