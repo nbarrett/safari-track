@@ -161,7 +161,7 @@ export default function DriveDetailPage() {
           </div>
 
           {stats.totalDistanceKm > 0 && (
-            <div className="mt-5 flex flex-wrap gap-3">
+            <div className="mt-5 grid grid-cols-5 gap-2">
               <StatBadge label="Distance" value={formatDistanceWithUnit(stats.totalDistanceKm, distanceUnit)} />
               <StatBadge label="Duration" value={formatDuration(stats.durationMinutes)} />
               <StatBadge label="Avg Speed" value={formatSpeedWithUnit(stats.avgSpeedKmh, distanceUnit)} />
@@ -171,7 +171,7 @@ export default function DriveDetailPage() {
           )}
         </div>
 
-        <div className="mx-auto mt-6 max-w-7xl lg:flex lg:gap-4 lg:px-6">
+        <div className="mx-auto mt-8 max-w-7xl lg:flex lg:gap-4 lg:px-6">
           <div className="lg:flex-1">
             <DriveMap
               zoom={14}
@@ -331,9 +331,9 @@ export default function DriveDetailPage() {
 
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-white/10 px-3 py-1.5 backdrop-blur">
-      <div className="text-[10px] font-medium uppercase text-white/50">{label}</div>
-      <div className="text-sm font-semibold text-white">{value}</div>
+    <div className="rounded-lg bg-white/10 px-2 py-1.5 backdrop-blur">
+      <div className="text-[9px] font-medium uppercase leading-tight text-white/50">{label}</div>
+      <div className="text-xs font-semibold text-white sm:text-sm">{value}</div>
     </div>
   );
 }
