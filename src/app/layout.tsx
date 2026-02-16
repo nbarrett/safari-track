@@ -104,7 +104,9 @@ export default function RootLayout({
               <InstallPrompt />
               <ClientNav />
               <OfflineErrorBoundary>
-                {children}
+                <div style={{ paddingTop: "env(safe-area-inset-top, 0px)" }} className="flex min-h-0 flex-1 flex-col">
+                  {children}
+                </div>
               </OfflineErrorBoundary>
               <SyncIndicator />
             </SwProvider>

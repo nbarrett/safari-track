@@ -125,7 +125,7 @@ export default function DriveDetailPage() {
       <PageBackdrop />
 
       <div className="relative z-10 pb-8">
-        <div className="mx-auto max-w-7xl px-5 pt-2 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-5 pt-6 sm:px-6 lg:px-8">
           <div className="mb-2 flex flex-wrap items-center gap-3 pr-14 lg:pr-0">
             <Link
               href="/drives"
@@ -161,12 +161,11 @@ export default function DriveDetailPage() {
           </div>
 
           {stats.totalDistanceKm > 0 && (
-            <div className="mt-5 grid grid-cols-5 gap-2">
+            <div className="mt-5 grid grid-cols-4 gap-2">
               <StatBadge label="Distance" value={formatDistanceWithUnit(stats.totalDistanceKm, distanceUnit)} />
               <StatBadge label="Duration" value={formatDuration(stats.durationMinutes)} />
               <StatBadge label="Avg Speed" value={formatSpeedWithUnit(stats.avgSpeedKmh, distanceUnit)} />
               <StatBadge label="Max Speed" value={formatSpeedWithUnit(stats.maxSpeedKmh, distanceUnit)} />
-              <StatBadge label="Sightings" value={`${stats.sightingsCount}`} />
             </div>
           )}
         </div>
@@ -331,9 +330,9 @@ export default function DriveDetailPage() {
 
 function StatBadge({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg bg-white/10 px-2 py-1.5 backdrop-blur">
-      <div className="text-[9px] font-medium uppercase leading-tight text-white/50">{label}</div>
-      <div className="text-xs font-semibold text-white sm:text-sm">{value}</div>
+    <div className="rounded-lg bg-white/10 px-3 py-2 backdrop-blur">
+      <div className="text-[10px] font-medium uppercase text-white/50">{label}</div>
+      <div className="text-sm font-semibold text-white">{value}</div>
     </div>
   );
 }
