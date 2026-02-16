@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import ExifReader from "exifreader";
 import { savePendingPhoto } from "~/lib/photo-store";
 
 interface Detection {
@@ -17,6 +18,12 @@ interface SpeciesInfo {
   imageUrl: string | null;
 }
 
+interface PhotoMetadata {
+  lat?: number;
+  lng?: number;
+  date?: Date;
+}
+
 interface PhotoCaptureProps {
   driveId: string;
   currentPosition: { lat: number; lng: number } | null;
@@ -24,6 +31,7 @@ interface PhotoCaptureProps {
   onSightingsConfirmed: (
     sightings: { speciesId: string; commonName: string; category: string; imageUrl: string | null; count: number }[],
     photoUrl: string | null,
+    metadata?: PhotoMetadata,
   ) => void;
   onClose: () => void;
 }
@@ -45,16 +53,43 @@ export function PhotoCapture({
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [detectError, setDetectError] = useState<string | null>(null);
+  const [exifMeta, setExifMeta] = useState<PhotoMetadata | undefined>();
 
   const processPhoto = useCallback(
     async (file: File) => {
       const objectUrl = URL.createObjectURL(file);
       setPreview(objectUrl);
 
+      // Extract EXIF GPS + date
+      let exifLat: number | undefined;
+      let exifLng: number | undefined;
+      let exifDate: Date | undefined;
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const tags = ExifReader.load(arrayBuffer, { expanded: true });
+        if (tags.gps?.Latitude != null && tags.gps?.Longitude != null) {
+          exifLat = tags.gps.Latitude;
+          exifLng = tags.gps.Longitude;
+        }
+        const dateTag = tags.exif?.DateTimeOriginal ?? tags.exif?.DateTime;
+        if (dateTag?.description) {
+          // EXIF date format: "YYYY:MM:DD HH:MM:SS"
+          const parsed = new Date(dateTag.description.replace(/^(\d{4}):(\d{2}):(\d{2})/, "$1-$2-$3"));
+          if (!isNaN(parsed.getTime())) exifDate = parsed;
+        }
+      } catch {
+        // EXIF extraction failed — continue without it
+      }
+      const meta: PhotoMetadata | undefined =
+        exifLat != null || exifDate ? { lat: exifLat, lng: exifLng, date: exifDate } : undefined;
+      setExifMeta(meta);
+
+      // Use EXIF position if available, otherwise current GPS
+      const lat = exifLat ?? currentPosition?.lat ?? null;
+      const lng = exifLng ?? currentPosition?.lng ?? null;
+
       if (!navigator.onLine) {
         setState("uploading");
-        const lat = currentPosition?.lat ?? null;
-        const lng = currentPosition?.lng ?? null;
         await savePendingPhoto(driveId, file, lat, lng);
         setState("offline-saved");
         return;
@@ -65,10 +100,8 @@ export function PhotoCapture({
         const formData = new FormData();
         formData.append("photo", file);
         formData.append("driveId", driveId);
-        if (currentPosition) {
-          formData.append("lat", currentPosition.lat.toString());
-          formData.append("lng", currentPosition.lng.toString());
-        }
+        if (lat != null) formData.append("lat", lat.toString());
+        if (lng != null) formData.append("lng", lng.toString());
 
         const uploadRes = await fetch("/api/photos/upload", {
           method: "POST",
@@ -197,7 +230,7 @@ export function PhotoCapture({
           count: d.count,
         };
       });
-    onSightingsConfirmed(sightings, photoUrl);
+    onSightingsConfirmed(sightings, photoUrl, exifMeta);
   };
 
   const handleRetake = () => {
@@ -208,6 +241,7 @@ export function PhotoCapture({
     setPhotoUrl(null);
     setErrorMessage(null);
     setDetectError(null);
+    setExifMeta(undefined);
     setState("idle");
     fileInputRef.current?.click();
   };

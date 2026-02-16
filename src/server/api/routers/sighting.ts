@@ -16,6 +16,7 @@ export const sightingRouter = createTRPCRouter({
         count: z.number().int().min(1).default(1),
         notes: z.string().optional(),
         imageUrl: z.string().optional(),
+        createdAt: z.string().datetime().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -29,6 +30,7 @@ export const sightingRouter = createTRPCRouter({
           count: input.count,
           notes: input.notes,
           imageUrl: input.imageUrl,
+          ...(input.createdAt ? { createdAt: new Date(input.createdAt) } : {}),
         },
         include: { species: true },
       });

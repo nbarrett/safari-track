@@ -29,6 +29,7 @@
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
     "bcryptjs": "^3.0.3",
+    "exifreader": "^4.36.1",
     "idb-keyval": "^6.2.2",
     "leaflet": "^1.9.4",
     "next": "^15.2.3",

@@ -161,6 +161,7 @@ export default function DrivePage() {
       latitude: number;
       longitude: number;
       count: number;
+      createdAt?: string;
     }) => createSightingMutation.mutateAsync(input),
   });
 
@@ -752,9 +753,13 @@ export default function DrivePage() {
             category: s.category,
             imageUrl: s.imageUrl,
           }))}
-          onSightingsConfirmed={(sightings, _photoUrl) => {
+          onSightingsConfirmed={(sightings, _photoUrl, metadata) => {
             setShowCamera(false);
-            const pos = currentPosition ?? { lat: -24.25, lng: 31.15 };
+            const pos = {
+              lat: metadata?.lat ?? currentPosition?.lat ?? -24.25,
+              lng: metadata?.lng ?? currentPosition?.lng ?? 31.15,
+            };
+            const createdAt = metadata?.date?.toISOString();
             let addedSightings = 0;
             const seenSpeciesIds = new Set(initialQuickSpecies.map((s) => s.speciesId));
             for (const s of sightings) {
@@ -764,6 +769,7 @@ export default function DrivePage() {
                 latitude: pos.lat,
                 longitude: pos.lng,
                 count: s.count,
+                ...(createdAt ? { createdAt } : {}),
               });
               void addLocalSighting({
                 id: generateTempId(),

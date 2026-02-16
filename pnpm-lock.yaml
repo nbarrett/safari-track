@@ -44,6 +44,9 @@ importers:
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
+      exifreader:
+        specifier: ^4.36.1
+        version: 4.36.1
       idb-keyval:
         specifier: ^6.2.2
         version: 6.2.2
@@ -1183,6 +1186,10 @@ packages:
   '@types/trusted-types@2.0.7':
     resolution: {integrity: sha512-ScaPdn1dQczgbl0QFTeTOmVHFULt394XJgOQNoyVhZ6r2vLnMLJfBPd53SB52T/3G36VI1/g2MZaX0cwDuXsfw==}
 
+  '@xmldom/xmldom@0.9.8':
+    resolution: {integrity: sha512-p96FSY54r+WJ50FIOsCOjyj/wavs8921hG5+kVMmZgKcvIKxMXHTrjNJvRgWa/zuX3B6t2lijLNFaOyuxUH+2A==}
+    engines: {node: '>=14.6'}
+
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
     engines: {node: '>=8'}
@@ -1327,6 +1334,9 @@ packages:
   escalade@3.2.0:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
     engines: {node: '>=6'}
+
+  exifreader@4.36.1:
+    resolution: {integrity: sha512-LrQP+ad6g/9wLtw6pJyD7qTOKUECQxNcy9M3f8UhcOH4rZReuQhpWoOaG6lIGmzSJxwF2k+tH2atZoPuY6x7RQ==}
 
   exsolve@1.0.8:
     resolution: {integrity: sha512-LmDxfWXwcTArk8fUEnOfSZpHOJ6zOMUJKOtFLFqJLoKJetuQG874Uc7/Kki7zFLzYybmZhp1M7+98pfMqeX8yA==}
@@ -3131,6 +3141,9 @@ snapshots:
 
   '@types/trusted-types@2.0.7': {}
 
+  '@xmldom/xmldom@0.9.8':
+    optional: true
+
   ansi-regex@5.0.1: {}
 
   ansi-regex@6.2.2: {}
@@ -3276,6 +3289,10 @@ snapshots:
       '@esbuild/win32-x64': 0.27.3
 
   escalade@3.2.0: {}
+
+  exifreader@4.36.1:
+    optionalDependencies:
+      '@xmldom/xmldom': 0.9.8
 
   exsolve@1.0.8: {}
 
