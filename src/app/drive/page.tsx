@@ -242,12 +242,18 @@ export default function DrivePage() {
   const distanceUnit = userProfile.data?.distanceUnit ?? "km";
 
   const totalDistanceM = useMemo(() => {
+    const MAX_GAP_MS = 300_000;
+    const MAX_SEGMENT_SPEED_KMH = 120;
     let d = 0;
     for (let i = 1; i < allRoutePoints.length; i++) {
-      d += haversineDistance(
-        allRoutePoints[i - 1]!.lat, allRoutePoints[i - 1]!.lng,
-        allRoutePoints[i]!.lat, allRoutePoints[i]!.lng,
-      );
+      const prev = allRoutePoints[i - 1]!;
+      const curr = allRoutePoints[i]!;
+      const gap = new Date(curr.timestamp).getTime() - new Date(prev.timestamp).getTime();
+      if (gap <= 0 || gap > MAX_GAP_MS) continue;
+      const segDist = haversineDistance(prev.lat, prev.lng, curr.lat, curr.lng);
+      const speedKmh = (segDist / gap) * 3_600_000;
+      if (speedKmh > MAX_SEGMENT_SPEED_KMH) continue;
+      d += segDist;
     }
     return d;
   }, [allRoutePoints]);

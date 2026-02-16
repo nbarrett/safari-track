@@ -166,7 +166,7 @@ export default function ChecklistPage() {
       <div className="relative z-10 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col px-4 pb-4 pt-6 sm:px-6 lg:px-8">
         <div className="flex min-h-0 flex-1 flex-col rounded-2xl bg-white/90 shadow-lg backdrop-blur-md">
           {/* Sticky header section */}
-          <div className="shrink-0 border-b border-brand-cream/60 p-4 pr-14 sm:p-6 sm:pb-4 lg:pr-6">
+          <div className="shrink-0 border-b border-brand-cream/60 p-4 pr-12 sm:p-6 sm:pb-4 lg:pr-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Link

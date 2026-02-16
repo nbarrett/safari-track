@@ -14,7 +14,7 @@ export function PageContainer({
 }) {
   return (
     <div
-      className={`relative z-10 mx-auto ${maxWidth} px-4 pr-14 pb-8 pt-4 sm:px-6 lg:px-8 lg:pr-8 ${className}`}
+      className={`relative z-10 mx-auto ${maxWidth} px-4 pr-12 pb-8 pt-4 sm:px-6 lg:px-8 lg:pr-8 ${className}`}
     >
       {children}
     </div>

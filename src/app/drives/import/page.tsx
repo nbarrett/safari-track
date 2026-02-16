@@ -72,7 +72,7 @@ export default function GpxImportPage() {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 pr-14 pb-8 pt-6 sm:px-6 lg:px-8 lg:pr-8">
+      <div className="relative z-10 mx-auto max-w-3xl px-4 pr-12 pb-8 pt-6 sm:px-6 lg:px-8 lg:pr-8">
         <Link href="/drives" className="text-sm text-brand-gold hover:text-brand-gold/80">
           &larr; Back to history
         </Link>

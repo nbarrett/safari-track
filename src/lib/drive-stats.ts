@@ -50,20 +50,21 @@ export function calculateDriveStats(
 
   let totalDistance = 0;
   let maxSpeed = 0;
+  const MAX_GAP_MS = 300_000;
+  const MAX_SEGMENT_SPEED_KMH = 120;
 
   for (let i = 1; i < route.length; i++) {
     const prev = route[i - 1]!;
     const curr = route[i]!;
-    const dist = haversineDistance(prev.lat, prev.lng, curr.lat, curr.lng);
-    totalDistance += dist;
-
     const timeDiff =
       (new Date(curr.timestamp).getTime() - new Date(prev.timestamp).getTime()) / 1000;
-    if (timeDiff > 0) {
-      const speedKmh = (dist / timeDiff) * 3.6;
-      if (speedKmh > maxSpeed && speedKmh < 200) {
-        maxSpeed = speedKmh;
-      }
+    if (timeDiff <= 0 || timeDiff * 1000 > MAX_GAP_MS) continue;
+    const dist = haversineDistance(prev.lat, prev.lng, curr.lat, curr.lng);
+    const speedKmh = (dist / timeDiff) * 3.6;
+    if (speedKmh > MAX_SEGMENT_SPEED_KMH) continue;
+    totalDistance += dist;
+    if (speedKmh > maxSpeed) {
+      maxSpeed = speedKmh;
     }
   }
 

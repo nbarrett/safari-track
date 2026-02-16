@@ -18,7 +18,7 @@ export default function ChangelogPage() {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-2xl px-4 pr-14 pt-4 pb-12 sm:px-6 lg:px-8 lg:pr-8">
+      <div className="relative z-10 mx-auto max-w-2xl px-4 pr-12 pt-4 pb-12 sm:px-6 lg:px-8 lg:pr-8">
         <div className="mb-6 flex items-center gap-3">
           <Link
             href="/"

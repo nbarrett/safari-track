@@ -89,14 +89,18 @@ const SIGHTING_ICON = L.divIcon({
 });
 
 function createPositionIcon(bearing?: number) {
+  const size = bearing != null ? 48 : 28;
+  const half = size / 2;
   const arrow = bearing != null
-    ? `<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%) rotate(${bearing}deg);transform-origin:center 20px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:10px solid #3b82f6;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3))"></div>`
+    ? `<svg style="position:absolute;inset:0;transform:rotate(${bearing}deg)" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><polygon points="${half},2 ${half - 6},16 ${half + 6},16" fill="#3b82f6" stroke="white" stroke-width="1.5" opacity="0.9"/></svg>`
     : "";
+  const pulse = `<div style="position:absolute;top:${half - 14}px;left:${half - 14}px;width:28px;height:28px;border-radius:50%;background:rgba(59,130,246,0.15);animation:position-pulse 2s ease-out infinite"></div>`;
+  const dot = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div>`;
   return L.divIcon({
     className: "position-marker",
-    html: `<div style="position:relative;width:28px;height:28px">${arrow}<div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.15);animation:position-pulse 2s ease-out infinite"></div><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
+    html: `<div style="position:relative;width:${size}px;height:${size}px">${arrow}${pulse}${dot}</div>`,
+    iconSize: [size, size],
+    iconAnchor: [half, half],
   });
 }
 
@@ -376,7 +380,23 @@ export function DriveMap({
         const prev = route[i - 1]!;
         const point = route[i]!;
         const gap = new Date(point.timestamp).getTime() - new Date(prev.timestamp).getTime();
-        if (gap > MAX_GAP_MS) continue;
+        if (gap > MAX_GAP_MS) {
+          const dlat = point.lat - prev.lat;
+          const dlng = point.lng - prev.lng;
+          const gapDistKm = Math.sqrt(dlat * dlat + dlng * dlng) * 111.32;
+          if (gapDistKm < 5) {
+            const connector = L.polyline([[prev.lat, prev.lng], [point.lat, point.lng]], {
+              color: "#9ca3af",
+              weight: 1.5,
+              opacity: 0.5,
+              dashArray: "6 8",
+              lineCap: "round",
+            });
+            polylineGroupRef.current!.addLayer(connector);
+            bounds = bounds ? bounds.extend(connector.getBounds()) : connector.getBounds();
+          }
+          continue;
+        }
 
         const dlat = point.lat - prev.lat;
         const dlng = point.lng - prev.lng;
