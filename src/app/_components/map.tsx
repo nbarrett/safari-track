@@ -425,15 +425,19 @@ export function DriveMap({
             className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition active:scale-95 ${compassReceiving ? "bg-white" : "bg-white/70 ring-2 ring-brand-gold animate-pulse"}`}
           >
             <svg className="h-9 w-9 transition-transform duration-200" viewBox="0 0 40 40" fill="none" style={{ transform: `rotate(${-heading}deg)` }}>
-              <polygon points="20,4 17.5,9 22.5,9" fill={compassReceiving ? "#1f2937" : "#d97706"} />
-              <polygon points="20,36 22.5,31 17.5,31" fill="#ef4444" />
-              <line x1="35" y1="20" x2="32" y2="20" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
-              <line x1="5" y1="20" x2="8" y2="20" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
+              <polygon points="20,2 17.5,7 22.5,7" fill={compassReceiving ? "#1f2937" : "#d97706"} />
+              <polygon points="20,38 22.5,33 17.5,33" fill="#ef4444" />
+              <text x="20" y="13" textAnchor="middle" fontSize="7" fontWeight="700" fontFamily="system-ui,-apple-system,sans-serif" fill="#1f2937">N</text>
+              <text x="20" y="39" textAnchor="middle" fontSize="7" fontWeight="700" fontFamily="system-ui,-apple-system,sans-serif" fill="#9ca3af">S</text>
+              <text x="37" y="22.5" textAnchor="middle" fontSize="7" fontWeight="700" fontFamily="system-ui,-apple-system,sans-serif" fill="#9ca3af">E</text>
+              <text x="3" y="22.5" textAnchor="middle" fontSize="7" fontWeight="700" fontFamily="system-ui,-apple-system,sans-serif" fill="#9ca3af">W</text>
               <line x1="31" y1="9" x2="28.5" y2="11.5" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" />
               <line x1="9" y1="9" x2="11.5" y2="11.5" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" />
               <line x1="31" y1="31" x2="28.5" y2="28.5" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" />
               <line x1="9" y1="31" x2="11.5" y2="28.5" stroke="#d1d5db" strokeWidth="1.2" strokeLinecap="round" />
-              <text x="20" y="24" textAnchor="middle" fontSize="13" fontWeight="700" fontFamily="system-ui,-apple-system,sans-serif" fill="#1f2937">N</text>
+              <text x="20" y="24" textAnchor="middle" fontSize="11" fontWeight="700" fontFamily="system-ui,-apple-system,sans-serif" fill="#1f2937" transform={`rotate(${heading} 20 20)`}>
+                {["N","NE","E","SE","S","SW","W","NW"][Math.round(heading / 45) % 8]}
+              </text>
             </svg>
           </button>
           <button
