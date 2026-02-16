@@ -68,7 +68,7 @@ export default function DrivesPage() {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 pr-12 pt-6 pb-8 sm:px-6 lg:px-8 lg:pr-8">
+      <div className="relative z-10 mx-auto max-w-3xl px-4 pt-6 pb-8 sm:px-6 lg:px-8">
         <div className="mb-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-white drop-shadow-md">Drive History</h1>
           <div className="flex items-center gap-2">

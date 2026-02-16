@@ -47,7 +47,7 @@ export default function AdminSettingsPage() {
     return (
       <main className="relative min-h-screen">
         <PageBackdrop />
-        <div className="relative z-10 mx-auto max-w-3xl px-4 pr-12 pb-8 pt-6 sm:px-6 lg:px-8 lg:pr-8">
+        <div className="relative z-10 mx-auto max-w-3xl px-4 pb-8 pt-6 sm:px-6 lg:px-8">
           <div className="rounded-lg bg-red-600/90 px-4 py-3 text-sm text-white backdrop-blur-sm">
             Access denied
           </div>

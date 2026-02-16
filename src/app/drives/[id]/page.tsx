@@ -125,7 +125,7 @@ export default function DriveDetailPage() {
       <PageBackdrop />
 
       <div className="relative z-10 pb-8">
-        <div className="mx-auto max-w-7xl px-4 pr-12 pt-2 sm:px-6 lg:px-8 lg:pr-8">
+        <div className="mx-auto max-w-7xl px-4 pt-2 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/drives"

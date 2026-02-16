@@ -88,7 +88,7 @@ export default function LodgeShowcasePage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-6 pr-12 py-12 sm:px-8 lg:pr-8">
+      <div className="mx-auto max-w-4xl px-6 py-12 sm:px-8">
         <div className="grid gap-12 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <p className="text-lg leading-relaxed text-brand-dark/80">
