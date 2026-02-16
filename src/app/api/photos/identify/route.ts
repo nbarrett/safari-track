@@ -38,13 +38,17 @@ export async function POST(request: Request) {
 
 IMPORTANT: Only return species from this exact list: ${speciesListText}
 
-For each species you identify, provide:
+For each species you can see, return:
+1. Your best identification with high confidence
+2. Also include alternative species from the list that it COULD plausibly be (e.g. similar-looking species in the same family). Give these lower confidence scores.
+
+For each entry provide:
 - commonName: the exact name from the list above
-- count: how many individuals you can see
+- count: how many individuals you can see (for alternatives, use the same count as the primary)
 - confidence: your confidence level from 0 to 1
 
 Return ONLY valid JSON in this exact format, with no other text:
-[{"commonName": "species name", "count": 1, "confidence": 0.9}]
+[{"commonName": "species name", "count": 1, "confidence": 0.9}, {"commonName": "similar species", "count": 1, "confidence": 0.3}]
 
 If you cannot identify any species from the list, return an empty array: []`;
 
@@ -78,7 +82,7 @@ If you cannot identify any species from the list, return an empty array: []`;
         (d) =>
           d.commonName &&
           d.count > 0 &&
-          d.confidence >= 0.7 &&
+          d.confidence >= 0.15 &&
           speciesSet.has(d.commonName.toLowerCase()),
       )
       .map((d) => ({

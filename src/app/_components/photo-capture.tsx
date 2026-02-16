@@ -41,6 +41,7 @@ export function PhotoCapture({
   const [state, setState] = useState<CaptureState>("idle");
   const [preview, setPreview] = useState<string | null>(null);
   const [detections, setDetections] = useState<Detection[]>([]);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [detectError, setDetectError] = useState<string | null>(null);
@@ -102,6 +103,7 @@ export function PhotoCapture({
             return { ...d, speciesId: species?.id };
           }).filter((d) => d.speciesId);
           setDetections(matched);
+          setSelected(new Set(matched.map((d, i) => d.confidence >= 0.7 ? i : -1).filter((i) => i >= 0)));
         } else {
           const errBody = (await identifyRes.json()) as { error?: string };
           setDetectError(errBody.error ?? `Detection failed (${identifyRes.status})`);
@@ -173,9 +175,18 @@ export function PhotoCapture({
     setDetections((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const toggleSelected = (index: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
+
   const handleConfirm = () => {
     const sightings = detections
-      .filter((d) => d.speciesId)
+      .filter((d, i) => d.speciesId && selected.has(i))
       .map((d) => {
         const species = speciesList.find((s) => s.id === d.speciesId)!;
         return {
@@ -193,6 +204,7 @@ export function PhotoCapture({
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setDetections([]);
+    setSelected(new Set());
     setPhotoUrl(null);
     setErrorMessage(null);
     setDetectError(null);
@@ -280,55 +292,76 @@ export function PhotoCapture({
               <img src={preview} alt="Captured" className="max-h-36 self-center rounded-xl object-contain" />
 
               {detections.length > 0 ? (
-                <div>
-                  <div className="mb-2 text-xs font-semibold uppercase text-brand-khaki">
-                    Detected Species
-                  </div>
-                  <div className="space-y-2">
-                    {detections.map((d, i) => (
-                      <div
-                        key={d.speciesId ?? i}
-                        className="flex items-center gap-2 rounded-xl bg-brand-cream/50 px-3 py-2"
-                      >
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-medium text-brand-dark">
-                            {d.commonName}
-                          </div>
-                          <div className="text-[10px] text-brand-khaki">
-                            {Math.round(d.confidence * 100)}% confidence
-                          </div>
+                <div className="max-h-[40vh] overflow-y-auto">
+                  {detections.some((d) => d.confidence >= 0.7) && (
+                    <div className="mb-2 text-xs font-semibold uppercase text-brand-khaki">
+                      Best Match
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    {detections.map((d, i) => {
+                      const isAlt = d.confidence < 0.7;
+                      const isSelected = selected.has(i);
+                      const isFirstAlt = isAlt && (i === 0 || detections[i - 1]!.confidence >= 0.7);
+                      return (
+                        <div key={d.speciesId ?? i}>
+                          {isFirstAlt && (
+                            <div className="mb-1.5 mt-3 text-xs font-semibold uppercase text-brand-khaki">
+                              Also Possible
+                            </div>
+                          )}
+                          <button
+                            onClick={() => toggleSelected(i)}
+                            className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left transition active:scale-[0.98] ${
+                              isSelected
+                                ? "bg-brand-green/10 ring-1 ring-brand-green/30"
+                                : "bg-brand-cream/50"
+                            }`}
+                          >
+                            <div className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
+                              isSelected ? "bg-brand-green text-white" : "border border-brand-khaki/30"
+                            }`}>
+                              {isSelected && (
+                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className={`truncate text-sm font-medium ${isSelected ? "text-brand-dark" : "text-brand-khaki"}`}>
+                                {d.commonName}
+                              </div>
+                              <div className="text-[10px] text-brand-khaki">
+                                {Math.round(d.confidence * 100)}% confidence
+                              </div>
+                            </div>
+                            {isSelected && (
+                              <div className="flex shrink-0 items-center gap-1">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleCountChange(i, -1); }}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500/15 text-red-600 transition active:scale-90"
+                                >
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+                                  </svg>
+                                </button>
+                                <span className="min-w-[1.5rem] text-center text-sm font-semibold text-brand-dark">
+                                  {d.count}
+                                </span>
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); handleCountChange(i, 1); }}
+                                  className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-green/15 text-brand-green transition active:scale-90"
+                                >
+                                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+                          </button>
                         </div>
-                        <div className="flex shrink-0 items-center gap-1">
-                          <button
-                            onClick={() => handleCountChange(i, -1)}
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500/15 text-red-600 transition active:scale-90"
-                          >
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
-                            </svg>
-                          </button>
-                          <span className="min-w-[1.5rem] text-center text-sm font-semibold text-brand-dark">
-                            {d.count}
-                          </span>
-                          <button
-                            onClick={() => handleCountChange(i, 1)}
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-brand-green/15 text-brand-green transition active:scale-90"
-                          >
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => handleRemoveDetection(i)}
-                            className="ml-1 flex h-7 w-7 items-center justify-center rounded-full bg-brand-cream text-brand-khaki transition active:scale-90"
-                          >
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : detectError ? (
@@ -344,12 +377,12 @@ export function PhotoCapture({
               )}
 
               <div className="flex gap-2">
-                {detections.length > 0 && (
+                {selected.size > 0 && (
                   <button
                     onClick={handleConfirm}
                     className="flex-1 rounded-xl bg-brand-green py-2.5 text-sm font-bold text-white transition active:scale-95"
                   >
-                    Confirm Sightings
+                    Confirm ({selected.size})
                   </button>
                 )}
                 <button
@@ -362,7 +395,7 @@ export function PhotoCapture({
                   onClick={onClose}
                   className="flex-1 rounded-xl bg-brand-khaki/10 py-2.5 text-sm font-bold text-brand-khaki transition active:scale-95"
                 >
-                  {detections.length > 0 ? "Skip" : "Done"}
+                  {selected.size > 0 ? "Skip" : "Done"}
                 </button>
               </div>
             </div>
