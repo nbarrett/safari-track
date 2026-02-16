@@ -5,7 +5,7 @@ import Link from "next/link";
 import type L from "leaflet";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { useGpsTracker, clearPersistedBuffer } from "~/app/_components/gps-tracker";
 import { QuickSightingPanel } from "~/app/_components/quick-sighting";
@@ -96,6 +96,7 @@ export default function DrivePage() {
   const [routeOverview, setRouteOverview] = useState(false);
   const [showFinishModal, setShowFinishModal] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
+  const router = useRouter();
 
   const utils = api.useUtils();
 
@@ -151,28 +152,39 @@ export default function DrivePage() {
       addRoutePointsMutation.mutateAsync(input),
   });
 
+  const savedDriveIdRef = useRef<string | null>(null);
+
   const offlineEndDrive = useOfflineMutation({
     path: "drive.end",
     mutationFn: (input: { id: string }) => endDriveMutation.mutateAsync(input),
-    onSuccess: () => {
+    onSuccess: (_result, input) => {
+      const savedId = savedDriveIdRef.current ?? input.id;
       setRoutePoints([]);
       setMutationError(null);
       setLocalDriveId(null);
       setLocalStartedAt(null);
       setInitialQuickSpecies([]);
+      setShowFinishModal(false);
       void clearLocalDrive();
       void clearPersistedBuffer();
       void utils.drive.active.invalidate();
       void utils.drive.list.invalidate();
+      router.push(`/drives/${savedId}`);
     },
-    onError: (err) => setMutationError(err.message),
-    onOfflineQueued: () => {
+    onError: (err) => {
+      setShowFinishModal(false);
+      setMutationError(err.message);
+    },
+    onOfflineQueued: (input) => {
+      const savedId = savedDriveIdRef.current ?? input.id;
       setRoutePoints([]);
       setLocalDriveId(null);
       setLocalStartedAt(null);
       setInitialQuickSpecies([]);
+      setShowFinishModal(false);
       void clearLocalDrive();
       void clearPersistedBuffer();
+      router.push(`/drives/${savedId}`);
     },
   });
 
@@ -351,10 +363,10 @@ export default function DrivePage() {
   };
 
   const handleSaveDrive = () => {
-    setShowFinishModal(false);
     void clearDriveNotification();
     const id = driveSession?.id ?? localDriveId;
     if (id) {
+      savedDriveIdRef.current = id;
       offlineEndDrive.mutate({ id });
     }
   };
