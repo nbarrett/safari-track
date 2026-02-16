@@ -357,7 +357,7 @@ export function DriveMap({
     }
 
     if (route.length > 0) {
-      const MAX_GAP_MS = 30_000;
+      const MAX_GAP_MS = 300_000;
       const MAX_SPEED_KMH = 60;
 
       const speedColour = (kmh: number): string => {
@@ -376,12 +376,12 @@ export function DriveMap({
         const prev = route[i - 1]!;
         const point = route[i]!;
         const gap = new Date(point.timestamp).getTime() - new Date(prev.timestamp).getTime();
-        if (gap > MAX_GAP_MS || gap <= 0) continue;
+        if (gap > MAX_GAP_MS) continue;
 
         const dlat = point.lat - prev.lat;
         const dlng = point.lng - prev.lng;
         const distKm = Math.sqrt(dlat * dlat + dlng * dlng) * 111.32;
-        const speedKmh = distKm / (gap / 3_600_000);
+        const speedKmh = gap > 0 ? distKm / (gap / 3_600_000) : 0;
 
         const latlngs: [number, number][] = [[prev.lat, prev.lng], [point.lat, point.lng]];
         const pl = L.polyline(latlngs, {

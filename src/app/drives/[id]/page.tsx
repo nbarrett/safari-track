@@ -121,11 +121,11 @@ export default function DriveDetailPage() {
   }
 
   return (
-    <main className="relative flex h-dvh flex-col overflow-hidden">
+    <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 flex min-h-0 flex-1 flex-col">
-        <div className="shrink-0 mx-auto w-full max-w-7xl px-4 pr-14 sm:px-6 lg:px-8 lg:pr-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
+      <div className="relative z-10 pb-8">
+        <div className="mx-auto max-w-7xl px-4 pr-14 sm:px-6 lg:px-8 lg:pr-8" style={{ paddingTop: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/drives"
@@ -171,18 +171,18 @@ export default function DriveDetailPage() {
           )}
         </div>
 
-        <div className="mt-3 flex min-h-0 flex-1 flex-col lg:mx-auto lg:w-full lg:max-w-7xl lg:flex-row lg:gap-4 lg:px-6">
-          <div className="min-h-[40dvh] flex-1 lg:min-h-0">
+        <div className="mx-auto max-w-7xl lg:flex lg:gap-4 lg:px-6">
+          <div className="lg:flex-1">
             <DriveMap
               zoom={14}
               route={routePoints}
               sightings={sightingMarkers}
               photos={photoMarkers}
-              className="h-full w-full lg:rounded-lg"
+              className="h-[50dvh] w-full lg:h-[70dvh] lg:rounded-lg"
             />
           </div>
 
-          <div className="max-h-[45dvh] overflow-y-auto px-4 pt-4 sm:px-6 lg:w-96 lg:max-h-none lg:px-0 lg:pt-0">
+          <div className="mx-auto max-w-3xl px-4 pt-4 sm:px-6 lg:w-96 lg:max-w-none lg:px-0 lg:pt-0">
             {drive.data.notes && (
               <div className="mb-4 rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur">
                 <div className="text-xs font-medium uppercase text-brand-khaki">Notes</div>
@@ -275,18 +275,18 @@ export default function DriveDetailPage() {
               <p className="text-sm text-white/60">No sightings recorded during this drive.</p>
             )}
 
-            {routePoints.length > 1 && (
-              <div className="mt-4">
-                <DriveTimeline
-                  route={routePoints}
-                  photos={photoMarkers}
-                  sightings={sightingMarkers}
-                />
-              </div>
-            )}
-            <div className="h-4 shrink-0" />
           </div>
         </div>
+
+        {routePoints.length > 1 && (
+          <div className="mx-auto mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
+            <DriveTimeline
+              route={routePoints}
+              photos={photoMarkers}
+              sightings={sightingMarkers}
+            />
+          </div>
+        )}
       </div>
 
       {selectedPhoto && (
