@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.4.0";
+export const APP_VERSION = "1.5.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,18 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.5.0",
+    date: "16 Feb 2026",
+    title: "Route tracking and layout fixes",
+    changes: [
+      "Direction arrow now visible on the map showing which way you're heading",
+      "Drive route stays connected during stops with dashed lines for gaps",
+      "Fixed inflated distance readings caused by GPS jumps when the phone wakes up",
+      "Reduced right-side padding on all pages for a cleaner mobile layout",
+      "Drive history no longer collides with the phone status bar",
+    ],
+  },
   {
     version: "1.4.0",
     date: "16 Feb 2026",
