@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { clearCachedSession } from "~/lib/session-cache";
+import { APP_VERSION } from "~/lib/version";
 import { api } from "~/trpc/react";
 import { OfflineIndicator } from "~/app/_components/offline-indicator";
 import { PrecacheIndicator } from "~/app/_components/precache-indicator";
@@ -200,9 +201,18 @@ export function Nav() {
               );
             })}
           </div>
-          <div className="flex items-center justify-between border-t border-white/10 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-            <OfflineIndicator />
-            <PrecacheIndicator />
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 py-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <Link
+              href="/changelog"
+              onClick={closeMenu}
+              className="text-sm text-white/30 transition hover:text-white/60"
+            >
+              v{APP_VERSION}
+            </Link>
+            <div className="flex items-center gap-3">
+              <OfflineIndicator />
+              <PrecacheIndicator />
+            </div>
             {session ? (
               <button
                 onClick={() => void handleSignOut()}
