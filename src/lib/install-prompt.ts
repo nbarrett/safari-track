@@ -1,4 +1,4 @@
-export type InstallScenario = "android" | "ios-safari" | "ios-non-safari";
+export type InstallScenario = "android" | "ios-safari" | "ios-non-safari" | "desktop";
 
 export const MANIFEST_VERSION = 1;
 
@@ -37,6 +37,10 @@ export function detectInstallScenario(): InstallScenario | null {
 
   if (isIos()) {
     return isIosSafari() ? "ios-safari" : "ios-non-safari";
+  }
+
+  if (navigator.maxTouchPoints === 0 || !/Mobi|Android/i.test(navigator.userAgent)) {
+    return "desktop";
   }
 
   return "android";

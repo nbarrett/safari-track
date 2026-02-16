@@ -24,14 +24,27 @@ export function InstallPrompt() {
   const [show, setShow] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
+  const timerFired = useRef(false);
+
   useEffect(() => {
+    const tryShow = (scenario: InstallScenario) => {
+      if (isDismissed(scenario)) return;
+      setState({ kind: "scenario", scenario });
+      setShow(true);
+    };
+
     const handleBip = (e: Event) => {
       e.preventDefault();
       deferredPrompt.current = e as BeforeInstallPromptEvent;
+      if (timerFired.current && !show) {
+        tryShow("android");
+      }
     };
     window.addEventListener("beforeinstallprompt", handleBip);
 
     const timer = setTimeout(() => {
+      timerFired.current = true;
+
       if (isAppStale()) {
         setState({ kind: "stale" });
         setShow(true);
@@ -40,18 +53,17 @@ export function InstallPrompt() {
 
       const scenario = detectInstallScenario();
       if (!scenario) return;
-      if (isDismissed(scenario)) return;
+
       if (scenario === "android" && !deferredPrompt.current) return;
 
-      setState({ kind: "scenario", scenario });
-      setShow(true);
+      tryShow(scenario);
     }, 3000);
 
     return () => {
       clearTimeout(timer);
       window.removeEventListener("beforeinstallprompt", handleBip);
     };
-  }, []);
+  }, [show]);
 
   if (!state || !show) return null;
 
@@ -81,7 +93,7 @@ export function InstallPrompt() {
           <BannerContent state={state} />
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          {state.kind === "scenario" && state.scenario === "android" && (
+          {deferredPrompt.current && (
             <button
               onClick={handleInstall}
               className="rounded-md bg-brand-gold px-3 py-1.5 font-medium text-brand-dark"
@@ -127,6 +139,12 @@ function BannerContent({ state }: { state: PromptState }) {
         <p>
           For the best experience, open this app in <strong>Safari</strong> and
           tap <strong>Share &rarr; Add to Home Screen</strong>.
+        </p>
+      );
+    case "desktop":
+      return (
+        <p>
+          Install Safari Track: click the install icon in your browser&apos;s address bar, or use the browser menu.
         </p>
       );
   }
