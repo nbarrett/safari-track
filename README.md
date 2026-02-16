@@ -1,70 +1,160 @@
-# Safari Track
+<p align="center">
+  <img src="public/logo-icon.png" alt="Safari Track" width="280" />
+</p>
 
-A real-time wildlife tracking web application for game guides. Guides log into their lodge, start a game drive, and the app tracks their GPS route while they record wildlife sightings along the way. Each guide maintains a personal species checklist that updates automatically as they log sightings.
+<h1 align="center">Safari Track</h1>
 
-The species checklist is also browsable by anyone without signing in.
+<p align="center">
+  <strong>GPS-tracked game drives and wildlife sighting logs for safari lodges</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/version-1.4.0-brand?color=6B4C2E" alt="Version" />
+  <img src="https://img.shields.io/badge/Next.js-15-black" alt="Next.js" />
+  <img src="https://img.shields.io/badge/TypeScript-strict-blue" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/PWA-offline--first-4A7043" alt="PWA" />
+</p>
+
+---
+
+## For the Business Owner
+
+**Safari Track is a mobile app that your game guides carry on every drive.** It records their GPS route in real time, lets them tap to log every animal they spot, and builds a personal wildlife checklist for each guide. When the drive is over, guests and lodge managers can review a beautiful map of the route with every sighting pinned to the exact location. Everything works offline in the bush and syncs automatically when back in Wi-Fi range. Think of it as Strava for safari guides — but instead of tracking fitness, it tracks wildlife encounters across your lodge.
+
+---
+
+<p align="center">
+  <img src="public/hero-wildlife-01.jpg" alt="Wildlife on safari" width="800" style="border-radius: 12px" />
+</p>
+
+## What It Does
+
+### Game Drive Recording
+<img src="public/hero-wildlife-03.jpg" alt="Game drive" width="400" align="right" style="border-radius: 8px; margin-left: 16px; margin-bottom: 16px" />
+
+- **Live GPS tracking** with route recorded every 10 seconds
+- **Speed-coloured route line** (green = slow, red = fast) like Strava
+- **Direction arrow** showing which way the vehicle is heading
+- **Auto-pause** when the vehicle stops, auto-resume when it moves
+- **Compass** with N/E/S/W labels for navigation in the field
+- **Drive timer, distance, and sighting counter** always visible
+- Works completely **offline** — syncs when back in range
+
+<br clear="both" />
+
+### Wildlife Sighting Logger
+<img src="public/hero-wildlife-05.jpg" alt="Wildlife sighting" width="400" align="right" style="border-radius: 8px; margin-left: 16px; margin-bottom: 16px" />
+
+- **Tap to log** a sighting instantly during a drive
+- **240+ species** across Mammals, Birds, Reptiles, and Creepy Crawlies
+- Log count, notes, and **"Heard only"** for sounds without visuals
+- **Decrement with confirmation** to prevent accidental removal
+- Each sighting pinned to GPS location on the map
+- Species images and category indicators
+
+<br clear="both" />
+
+### Personal Species Checklist
+<img src="public/hero-wildlife-07.jpg" alt="Checklist" width="400" align="right" style="border-radius: 8px; margin-left: 16px; margin-bottom: 16px" />
+
+- **Progress tracking** with percentage complete and per-category breakdowns
+- Auto-updates as sightings are logged
+- Filter by **category, search, or spotted-only**
+- Adjustable **thumbnail sizes** (S / M / L / XL)
+- **Guest browsable** — visitors can explore without signing in
+- First sighting date and location recorded for each species
+
+<br clear="both" />
+
+### Interactive Map
+<img src="public/hero-wildlife-09.jpg" alt="Safari map" width="400" align="right" style="border-radius: 8px; margin-left: 16px; margin-bottom: 16px" />
+
+- **Satellite, terrain, and street** map layers
+- **Road overlay** uploaded by the lodge admin
+- **Points of Interest** — tap the pin button, tap the map, name it
+- Sighting markers, photo markers, and position dot with bearing arrow
+- **Route overview** with fit-to-bounds and bottom panel awareness
+- **Flythrough mode** replays the drive with photos on a timeline
+
+<br clear="both" />
+
+### Drive History & Review
+- Browse all drives with sighting counts and status
+- **Multi-select and bulk delete** drives
+- Full route playback with sightings, photos, and statistics
+- Duration, distance, average speed, max speed
+- Admin users can delete any drive
+
+### Multi-Drive Trips
+- Group consecutive drives into a **trip**
+- Species carry forward across drives in the same trip
+- Trip summary shows aggregated sightings for the day
+
+### Strava Integration
+- **Connect your Strava account** via OAuth
+- Browse and **import Strava activities** as drives (route + photos)
+- **GPX import** from any GPS device
+
+### Lodge Showcase
+- Beautiful **lodge pages** with hero images and branding
+- Three lodges in the Greater Kruger: Nzumba, Last Word Kitara, Dundee
+- Each lodge has its own colour scheme and logo
+
+### Offline-First PWA
+- **Install to home screen** on iOS and Android
+- Full functionality without internet — drives, sightings, checklist all work offline
+- **Background sync** queues mutations and drains when online
+- **Lock screen notifications** showing drive time and distance
+- Species images pre-cached for offline browsing
+- Session caching for instant app startup
+
+### Admin Tools
+- **Species management** — add, edit, delete species
+- **Road data upload** — GeoJSON road network overlay on map
+- **Strava credentials** — configure OAuth client for the lodge
+
+---
+
+<p align="center">
+  <img src="public/hero-wildlife-10.jpg" alt="African wildlife" width="800" style="border-radius: 12px" />
+</p>
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | **Framework** | Next.js 15 (App Router, Turbopack) |
-| **Language** | TypeScript (strict mode, no JS files) |
+| **Language** | TypeScript (strict mode) |
 | **Styling** | Tailwind CSS 4 |
 | **API** | tRPC 11 (end-to-end type safety) |
 | **Database** | MongoDB Atlas via Prisma ORM |
-| **Auth** | NextAuth 5 (credentials provider, bcrypt, JWT sessions) |
-| **Maps** | Leaflet + React-Leaflet (OpenStreetMap & Esri satellite imagery) |
+| **Auth** | NextAuth 5 (credentials, bcrypt, JWT) |
+| **Maps** | Leaflet (OpenStreetMap + Esri satellite) |
+| **Offline** | Service Worker (Serwist) + IndexedDB |
 | **Package Manager** | pnpm |
-| **Module System** | 100% ESM (`"type": "module"`) |
+| **Deployment** | Fly.io (Johannesburg region) |
 
-## Deployment
+## Data Models
 
-| Setting | Value |
-|---------|-------|
-| **Platform** | [Fly.io](https://fly.io) |
-| **Organisation** | `annix` (personal) |
-| **App name** | `safari-track` |
-| **Region** | `jnb` (Johannesburg) |
-| **CI/CD** | GitHub Actions |
-
-## Features
-
-### Game Drive Tracking
-- Start/end drive sessions with real-time GPS recording
-- Route tracked every 10 seconds via browser Geolocation API
-- Interactive map showing live position, route polyline, and sighting markers
-- Tap the map to log a sighting at any location
-
-### Wildlife Sighting Log
-- Search species by name with autocomplete
-- Record count, notes, and GPS coordinates per sighting
-- Sightings linked to the active drive session and guide
-
-### Personal Species Checklist
-- 243 pre-loaded species (mammals, birds, reptiles) from the Greater Kruger region
-- Progress tracking: percentage complete, breakdown by category
-- Auto-updates when sightings are logged
-- Filter by category, search, or spotted-only view
-- Browsable as a guest without signing in
-
-### Drive History
-- Browse past drives for the entire lodge
-- View full route playback with all sightings on the map
-- See guide name, duration, sighting count, and notes
-
-### Authentication & Roles
-- Email/password login per guide
-- Roles: `ADMIN`, `GUIDE`, `VIEWER`
-- Each user belongs to a lodge (Nzumba, Last Word Kitara, or Dundee)
+| Model | Purpose |
+|-------|---------|
+| **User** | Guide account with role (ADMIN/GUIDE/VIEWER) and lodge |
+| **Lodge** | Safari camp with GPS coordinates and branding |
+| **Species** | Wildlife catalogue — 243+ species with images |
+| **DriveSession** | Game drive with GPS route, photos, and timestamps |
+| **Sighting** | Wildlife observation linked to drive, species, and location |
+| **ChecklistItem** | Per-user species tracking with sighting history |
+| **PointOfInterest** | Named map markers with category and icon |
+| **StravaAccount** | OAuth tokens for Strava integration |
+| **AppSettings** | Key-value config (Strava credentials, etc.) |
 
 ## Getting Started
 
 ### Prerequisites
 
 - **Node.js** >= 22
-- **pnpm** (install: `corepack enable && corepack prepare pnpm@latest --activate`)
-- A **MongoDB Atlas** cluster (or any MongoDB 6+ instance)
+- **pnpm** (`corepack enable && corepack prepare pnpm@latest --activate`)
+- **MongoDB Atlas** cluster (or MongoDB 6+)
 
 ### Environment Setup
 
@@ -72,177 +162,91 @@ The species checklist is also browsable by anyone without signing in.
 cp .env.example .env
 ```
 
-Edit `.env` with your values:
+Edit `.env`:
 
 ```env
 AUTH_SECRET="<generate with: npx auth secret>"
 DATABASE_URL="mongodb+srv://<user>:<password>@<cluster>.mongodb.net/<database>?retryWrites=true&w=majority"
 ```
 
-### Quick Start (automated scripts)
+### Quick Start
 
-The dev scripts handle dependency installation, Prisma client generation, schema push, and server startup in one command.
-
-**macOS / Linux:**
 ```bash
-./run-dev.sh
+./run-dev.sh        # macOS / Linux
+.\run-dev.ps1       # Windows PowerShell
+run-dev.bat          # Windows Command Prompt
 ```
 
-**Windows (PowerShell):**
-```powershell
-.\run-dev.ps1
-```
-
-**Windows (Command Prompt):**
-```cmd
-run-dev.bat
-```
-
-The server starts at **http://localhost:3003** (override with `DEV_PORT` env var).
-
-### Manual Setup (alternative)
+Or manually:
 
 ```bash
 pnpm install
 pnpm db:push          # push schema to MongoDB
-pnpm db:seed          # seed species data + default admin user
-pnpm dev              # start dev server with Turbopack
+pnpm db:seed          # seed species + default admin
+pnpm dev              # start at http://localhost:3003
 ```
 
-### Seeding the Database
+### Default Admin
 
-After the schema is pushed, seed with species data and a default admin user:
-
-```bash
-pnpm db:seed
-```
-
-Default admin credentials:
 - **Email:** `admin@klaserie.co.za`
 - **Password:** `admin123`
 
-The seed creates:
-- 3 lodges (Nzumba Camp, Last Word Kitara, Dundee Camp)
-- 243 species (mammals, birds, reptiles)
-- 1 admin user assigned to Nzumba Camp
-
-## Stopping the Dev Server
-
-### macOS / Linux
-
-Press `Ctrl+C` in the terminal running the dev server, or:
-
-```bash
-./kill-dev.sh
-```
-
-To manually kill the process:
-
-```bash
-# Find and kill the Next.js dev server
-lsof -ti :3003 | xargs kill
-```
-
-### Windows (PowerShell)
-
-Press `Ctrl+C` in the terminal running the dev server, or:
-
-```powershell
-.\kill-dev.ps1
-```
-
-To manually kill the process:
-
-```powershell
-# Find PID on port 3003
-netstat -ano | findstr :3003
-# Kill it
-Stop-Process -Id <PID> -Force
-```
-
-### Windows (Command Prompt)
-
-Press `Ctrl+C` in the terminal, or:
-
-```cmd
-taskkill /F /IM node.exe
-```
+The seed creates 3 lodges, 243+ species, and 1 admin user.
 
 ## Available Scripts
 
 | Script | Description |
 |--------|-------------|
-| `pnpm dev` | Start Next.js dev server with Turbopack |
+| `pnpm dev` | Dev server with Turbopack |
 | `pnpm build` | Production build |
-| `pnpm start` | Start production server |
-| `pnpm preview` | Build then start (production preview) |
-| `pnpm typecheck` | Run TypeScript type checker |
+| `pnpm start` | Production server |
+| `pnpm typecheck` | TypeScript type checker |
 | `pnpm db:push` | Push Prisma schema to MongoDB |
-| `pnpm db:generate` | Generate Prisma client |
-| `pnpm db:seed` | Seed species and default admin user |
-| `pnpm db:studio` | Open Prisma Studio (database GUI) |
+| `pnpm db:seed` | Seed species and admin user |
+| `pnpm db:studio` | Prisma Studio (database GUI) |
 
 ## Project Structure
 
 ```
 src/
-  app/                        # Next.js App Router pages
-    _components/              # Shared UI components
-      gps-tracker.tsx         # GPS tracking hook (Geolocation API)
-      home-content.tsx        # Authenticated home page
-      landing-page.tsx        # Unauthenticated landing page
-      map.tsx                 # Leaflet map with route/sighting layers
-      nav.tsx                 # Bottom navigation bar
-      session-provider.tsx    # NextAuth session wrapper
-      sighting-form.tsx       # Modal form for logging sightings
-    api/                      # API route handlers
-      auth/[...nextauth]/     # NextAuth endpoints
-      trpc/[trpc]/            # tRPC endpoint
-    auth/signin/              # Sign-in page
-    checklist/                # Species checklist (public + personal)
-    drive/                    # Active drive session page
-    drives/                   # Drive history list
-    drives/[id]/              # Drive detail/review page
-    layout.tsx                # Root layout
-    page.tsx                  # Home page (landing or dashboard)
+  app/
+    _components/          # Shared components (map, GPS, sighting panel, nav)
+    admin/                # Admin pages (species, roads, settings)
+    api/                  # API routes (auth, tRPC, GPX upload, roads upload)
+    auth/signin/          # Sign-in page
+    changelog/            # What's New page
+    checklist/            # Species checklist
+    drive/                # Active drive recording
+    drives/               # Drive history + detail + GPX import
+    lodges/               # Lodge showcase pages
+    profile/              # User profile and settings
+    strava/               # Strava connection and activity import
+  lib/                    # Utilities (offline queue, sync, notifications, stores)
   server/
-    api/
-      root.ts                 # tRPC router aggregation
-      routers/
-        checklist.ts          # Checklist CRUD + stats
-        drive.ts              # Drive session management + GPS points
-        sighting.ts           # Sighting CRUD
-        species.ts            # Species catalogue + search (public)
-      trpc.ts                 # tRPC context + middleware
-    auth/
-      config.ts               # NextAuth config (credentials, JWT, roles)
-      index.ts                # Auth utility exports
-    db.ts                     # Prisma client singleton
-  trpc/                       # tRPC client setup
-  styles/globals.css          # Tailwind CSS 4 theme + imports
-  env.ts                      # Environment variable validation (Zod)
+    api/routers/          # tRPC routers (drive, sighting, species, poi, etc.)
+    auth/                 # NextAuth config
+  styles/                 # Tailwind theme
 prisma/
-  schema.prisma               # Database schema (6 models)
-  seed.ts                     # Seed data (243 species, 3 lodges, admin)
+  schema.prisma           # 9 data models
+  seed.ts                 # 243+ species, 3 lodges, admin user
 ```
-
-## Data Models
-
-| Model | Purpose |
-|-------|---------|
-| **User** | Guide account with role and lodge assignment |
-| **Lodge** | Camp location with GPS coordinates |
-| **Species** | Wildlife catalogue (common name, scientific name, category, family) |
-| **DriveSession** | Game drive with route (JSON array of GPS points), start/end times |
-| **Sighting** | Individual wildlife observation linked to drive, species, and location |
-| **ChecklistItem** | Per-user species tracking (spotted, count, first sighted date) |
 
 ## Lodges
 
 All three camps are in the north-west sector of the Greater Kruger:
 
-| Camp | Latitude | Longitude |
-|------|----------|-----------|
+| Lodge | Latitude | Longitude |
+|-------|----------|-----------|
 | Nzumba Camp | -24.1925 | 31.0742 |
 | Last Word Kitara | -24.2048 | 31.0831 |
 | Dundee Camp | -24.1812 | 31.0654 |
+
+---
+
+<p align="center">
+  <img src="public/hero-elephants.jpg" alt="Elephants" width="600" style="border-radius: 12px" />
+</p>
+
+<p align="center">
+  <em>Built for the guides, guests, and wildlife of the Greater Kruger.</em>
+</p>
