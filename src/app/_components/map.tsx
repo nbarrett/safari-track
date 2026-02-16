@@ -26,19 +26,52 @@ interface SightingMarker {
   notes?: string | null;
 }
 
+interface PoiMarker {
+  id: string;
+  name: string;
+  category: string;
+  icon: string;
+  lat: number;
+  lng: number;
+}
+
+const POI_CATEGORIES = ["water", "viewpoint", "gate", "camp", "hide", "parking", "other"] as const;
+
 interface MapProps {
   center?: [number, number];
   zoom?: number;
   route?: GpsPoint[];
   sightings?: SightingMarker[];
   photos?: PhotoMarker[];
+  pois?: PoiMarker[];
   onMapClick?: (lat: number, lng: number) => void;
+  onPoiCreate?: (poi: { name: string; category: string; latitude: number; longitude: number }) => void;
   showOverlay?: boolean;
   showRoads?: boolean;
-  currentPosition?: { lat: number; lng: number } | null;
+  currentPosition?: { lat: number; lng: number; bearing?: number } | null;
   className?: string;
   mapRef?: React.MutableRefObject<L.Map | null>;
   compactControls?: boolean;
+  bottomPadding?: number;
+}
+
+const POI_CATEGORY_COLOURS: Record<string, string> = {
+  water: "#3b82f6",
+  viewpoint: "#8b5cf6",
+  gate: "#6b7280",
+  camp: "#f59e0b",
+  hide: "#4a7043",
+  parking: "#6B4C2E",
+};
+
+function createPoiIcon(category: string) {
+  const colour = POI_CATEGORY_COLOURS[category] ?? "#D4A017";
+  return L.divIcon({
+    className: "poi-marker",
+    html: `<div style="background:${colour};width:20px;height:20px;border-radius:4px;border:2px solid white;box-shadow:0 2px 4px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center"><svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg></div>`,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
 }
 
 const PHOTO_ICON = L.divIcon({
@@ -55,12 +88,17 @@ const SIGHTING_ICON = L.divIcon({
   iconAnchor: [8, 8],
 });
 
-const POSITION_ICON = L.divIcon({
-  className: "position-marker",
-  html: `<div style="position:relative;width:28px;height:28px"><div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.15);animation:position-pulse 2s ease-out infinite"></div><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div></div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 14],
-});
+function createPositionIcon(bearing?: number) {
+  const arrow = bearing != null
+    ? `<div style="position:absolute;top:-6px;left:50%;transform:translateX(-50%) rotate(${bearing}deg);transform-origin:center 20px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:10px solid #3b82f6;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.3))"></div>`
+    : "";
+  return L.divIcon({
+    className: "position-marker",
+    html: `<div style="position:relative;width:28px;height:28px">${arrow}<div style="position:absolute;inset:0;border-radius:50%;background:rgba(59,130,246,0.15);animation:position-pulse 2s ease-out infinite"></div><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:14px;height:14px;border-radius:50%;background:#3b82f6;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.35)"></div></div>`,
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+  });
+}
 
 const DUNDEE_OVERLAY_BOUNDS: L.LatLngBoundsExpression = [
   [-24.35, 31.05],
@@ -73,13 +111,16 @@ export function DriveMap({
   route = [],
   sightings = [],
   photos = [],
+  pois = [],
   onMapClick,
+  onPoiCreate,
   showOverlay = false,
   showRoads: showRoadsDefault = false,
   currentPosition,
   className = "h-full w-full",
   mapRef: externalMapRef,
   compactControls = false,
+  bottomPadding = 0,
 }: MapProps) {
   const internalMapRef = useRef<L.Map | null>(null);
   const mapRefToUse = externalMapRef ?? internalMapRef;
@@ -87,6 +128,7 @@ export function DriveMap({
   const polylineGroupRef = useRef<L.LayerGroup | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const photoMarkersRef = useRef<L.Marker[]>([]);
+  const poiMarkersRef = useRef<L.Marker[]>([]);
   const positionMarkerRef = useRef<L.Marker | null>(null);
   const overlayRef = useRef<L.ImageOverlay | null>(null);
   const roadsLayerRef = useRef<L.GeoJSON | null>(null);
@@ -104,6 +146,11 @@ export function DriveMap({
   const [compassReceiving, setCompassReceiving] = useState(false);
   const compassReceivingRef = useRef(false);
   const cleanupCompassRef = useRef<(() => void) | null>(null);
+  const [placingPoi, setPlacingPoi] = useState(false);
+  const [poiLatLng, setPoiLatLng] = useState<{ lat: number; lng: number } | null>(null);
+  const [poiName, setPoiName] = useState("");
+  const [poiCategory, setPoiCategory] = useState<string>("other");
+  const placingPoiRef = useRef(false);
 
   const attachCompassListeners = () => {
     if (cleanupCompassRef.current) cleanupCompassRef.current();
@@ -244,11 +291,15 @@ export function DriveMap({
       ).addTo(map);
     }
 
-    if (onMapClick) {
-      map.on("click", (e: L.LeafletMouseEvent) => {
+    map.on("click", (e: L.LeafletMouseEvent) => {
+      if (placingPoiRef.current) {
+        setPoiLatLng({ lat: e.latlng.lat, lng: e.latlng.lng });
+        setPlacingPoi(false);
+        placingPoiRef.current = false;
+      } else if (onMapClick) {
         onMapClick(e.latlng.lat, e.latlng.lng);
-      });
-    }
+      }
+    });
 
     if (compactControls) {
       map.on("dragstart", () => {
@@ -307,30 +358,39 @@ export function DriveMap({
 
     if (route.length > 0) {
       const MAX_GAP_MS = 30_000;
-      const segments: [number, number][][] = [];
-      let currentSegment: [number, number][] = [];
+      const MAX_SPEED_KMH = 60;
 
-      for (let i = 0; i < route.length; i++) {
-        const point = route[i]!;
-        if (i > 0) {
-          const prev = route[i - 1]!;
-          const gap = new Date(point.timestamp).getTime() - new Date(prev.timestamp).getTime();
-          if (gap > MAX_GAP_MS) {
-            if (currentSegment.length > 1) {
-              segments.push(currentSegment);
-            }
-            currentSegment = [];
-          }
+      const speedColour = (kmh: number): string => {
+        const t = Math.min(kmh / MAX_SPEED_KMH, 1);
+        if (t < 0.5) {
+          const r = Math.round(255 * (t * 2));
+          return `rgb(${r},200,60)`;
         }
-        currentSegment.push([point.lat, point.lng]);
-      }
-      if (currentSegment.length > 1) {
-        segments.push(currentSegment);
-      }
+        const g = Math.round(200 * (1 - (t - 0.5) * 2));
+        return `rgb(255,${g},60)`;
+      };
 
       let bounds: L.LatLngBounds | null = null;
-      for (const seg of segments) {
-        const pl = L.polyline(seg, { color: "#3b82f6", weight: 4, opacity: 0.8 });
+
+      for (let i = 1; i < route.length; i++) {
+        const prev = route[i - 1]!;
+        const point = route[i]!;
+        const gap = new Date(point.timestamp).getTime() - new Date(prev.timestamp).getTime();
+        if (gap > MAX_GAP_MS || gap <= 0) continue;
+
+        const dlat = point.lat - prev.lat;
+        const dlng = point.lng - prev.lng;
+        const distKm = Math.sqrt(dlat * dlat + dlng * dlng) * 111.32;
+        const speedKmh = distKm / (gap / 3_600_000);
+
+        const latlngs: [number, number][] = [[prev.lat, prev.lng], [point.lat, point.lng]];
+        const pl = L.polyline(latlngs, {
+          color: speedColour(speedKmh),
+          weight: 4,
+          opacity: 0.85,
+          lineCap: "round",
+          lineJoin: "round",
+        });
         polylineGroupRef.current.addLayer(pl);
         bounds = bounds ? bounds.extend(pl.getBounds()) : pl.getBounds();
       }
@@ -384,6 +444,23 @@ export function DriveMap({
   useEffect(() => {
     if (!mapRefToUse.current) return;
 
+    poiMarkersRef.current.forEach((m) => m.remove());
+    poiMarkersRef.current = [];
+
+    pois.forEach((poi) => {
+      const marker = L.marker([poi.lat, poi.lng], { icon: createPoiIcon(poi.category) })
+        .addTo(mapRefToUse.current!)
+        .bindPopup(
+          `<strong>${poi.name}</strong><br/><span style="color:#888;font-size:12px">${poi.category}</span>`,
+          { autoPan: false },
+        );
+      poiMarkersRef.current.push(marker);
+    });
+  }, [pois]);
+
+  useEffect(() => {
+    if (!mapRefToUse.current) return;
+
     if (!currentPosition) {
       if (positionMarkerRef.current) {
         positionMarkerRef.current.remove();
@@ -392,27 +469,43 @@ export function DriveMap({
       return;
     }
 
+    const icon = createPositionIcon(currentPosition.bearing);
     if (positionMarkerRef.current) {
       positionMarkerRef.current.setLatLng([currentPosition.lat, currentPosition.lng]);
+      positionMarkerRef.current.setIcon(icon);
     } else {
       positionMarkerRef.current = L.marker([currentPosition.lat, currentPosition.lng], {
-        icon: POSITION_ICON,
+        icon,
         zIndexOffset: 1000,
       }).addTo(mapRefToUse.current);
     }
 
     if (compactControls && followUserRef.current) {
-      mapRefToUse.current.setView(
-        [currentPosition.lat, currentPosition.lng],
-        mapRefToUse.current.getZoom(),
-      );
+      const map = mapRefToUse.current;
+      const z = map.getZoom();
+      if (bottomPadding > 0) {
+        const targetPoint = map.project([currentPosition.lat, currentPosition.lng], z);
+        targetPoint.y += bottomPadding / 2;
+        const offsetCenter = map.unproject(targetPoint, z);
+        map.setView(offsetCenter, z);
+      } else {
+        map.setView([currentPosition.lat, currentPosition.lng], z);
+      }
     }
-  }, [currentPosition, compactControls]);
+  }, [currentPosition, compactControls, bottomPadding]);
 
   const handleLocate = () => {
     if (!mapRefToUse.current || !currentPosition) return;
     followUserRef.current = true;
-    mapRefToUse.current.setView([currentPosition.lat, currentPosition.lng], 16);
+    const map = mapRefToUse.current;
+    if (bottomPadding > 0) {
+      const targetPoint = map.project([currentPosition.lat, currentPosition.lng], 16);
+      targetPoint.y += bottomPadding / 2;
+      const offsetCenter = map.unproject(targetPoint, 16);
+      map.setView(offsetCenter, 16);
+    } else {
+      map.setView([currentPosition.lat, currentPosition.lng], 16);
+    }
   };
 
   return (
@@ -466,6 +559,21 @@ export function DriveMap({
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v4m0 12v4m10-10h-4M6 12H2" />
             </svg>
           </button>
+          {onPoiCreate && (
+            <button
+              onClick={() => {
+                setPlacingPoi(true);
+                placingPoiRef.current = true;
+                followUserRef.current = false;
+              }}
+              className={`flex h-10 w-10 items-center justify-center rounded-full shadow-lg transition active:scale-95 ${placingPoi ? "bg-brand-gold text-white" : "bg-white/90 text-brand-dark"}`}
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+              </svg>
+            </button>
+          )}
         </div>
       ) : (
         <div className="absolute right-2 top-2 z-[1000] flex flex-col gap-1.5">
@@ -500,6 +608,71 @@ export function DriveMap({
               </svg>
             </button>
           )}
+        </div>
+      )}
+      {placingPoi && (
+        <div className="absolute left-0 right-0 top-16 z-[1100] mx-auto w-fit rounded-full bg-brand-gold px-4 py-2 text-sm font-semibold text-white shadow-lg">
+          Tap map to place POI
+          <button onClick={() => { setPlacingPoi(false); placingPoiRef.current = false; }} className="ml-2 underline">Cancel</button>
+        </div>
+      )}
+      {poiLatLng && onPoiCreate && (
+        <div className="absolute inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-6 w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl">
+            <h3 className="text-lg font-bold text-brand-dark">New Point of Interest</h3>
+            <div className="mt-3 space-y-3">
+              <input
+                type="text"
+                placeholder="Name"
+                value={poiName}
+                onChange={(e) => setPoiName(e.target.value)}
+                autoFocus
+                className="w-full rounded-lg border border-brand-khaki/30 px-3 py-2 text-sm focus:border-brand-gold focus:outline-none"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {POI_CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setPoiCategory(cat)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold capitalize transition ${
+                      poiCategory === cat
+                        ? "bg-brand-brown text-white"
+                        : "bg-brand-cream/50 text-brand-khaki"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => {
+                  if (poiName.trim()) {
+                    onPoiCreate({
+                      name: poiName.trim(),
+                      category: poiCategory,
+                      latitude: poiLatLng.lat,
+                      longitude: poiLatLng.lng,
+                    });
+                    setPoiLatLng(null);
+                    setPoiName("");
+                    setPoiCategory("other");
+                  }
+                }}
+                disabled={!poiName.trim()}
+                className="flex-1 rounded-xl bg-brand-green py-2.5 text-sm font-bold text-white transition active:scale-95 disabled:opacity-50"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => { setPoiLatLng(null); setPoiName(""); setPoiCategory("other"); }}
+                className="flex-1 rounded-xl bg-brand-cream py-2.5 text-sm font-bold text-brand-dark transition active:scale-95"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

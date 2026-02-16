@@ -117,6 +117,22 @@ export default function DrivePage() {
     enabled: status === "authenticated",
   });
 
+  const poisQuery = api.poi.list.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const poiMarkers = (poisQuery.data ?? []).map((p) => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    icon: p.icon,
+    lat: p.latitude,
+    lng: p.longitude,
+  }));
+
+  const createPoiMutation = api.poi.create.useMutation({
+    onSuccess: () => void utils.poi.list.invalidate(),
+  });
+
   const startDriveMutation = api.drive.start.useMutation();
   const endDriveMutation = api.drive.end.useMutation();
   const discardDriveMutation = api.drive.discard.useMutation();
@@ -369,11 +385,14 @@ export default function DrivePage() {
         zoom={15}
         route={allRoutePoints}
         sightings={sightingMarkers}
+        pois={poiMarkers}
         currentPosition={currentPosition}
         className="h-full w-full"
         compactControls
         showRoads
         mapRef={mapRef}
+        bottomPadding={200}
+        onPoiCreate={(poi) => createPoiMutation.mutate(poi)}
       />
 
       <Link
@@ -487,7 +506,7 @@ export default function DrivePage() {
                           } else {
                             setRouteOverview(true);
                             const bounds = allRoutePoints.map((p) => [p.lat, p.lng] as [number, number]);
-                            mapRef.current.fitBounds(bounds, { padding: [40, 40] });
+                            mapRef.current.fitBounds(bounds, { padding: [40, 40], paddingBottomRight: [40, 240] });
                           }
                         }}
                         className={`flex h-8 w-8 items-center justify-center rounded-lg transition active:scale-95 ${routeOverview ? "bg-brand-brown text-white" : "bg-brand-cream text-brand-khaki"}`}

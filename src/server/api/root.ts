@@ -1,6 +1,7 @@
 import { checklistRouter } from "~/server/api/routers/checklist";
 import { driveRouter } from "~/server/api/routers/drive";
 import { lodgeRouter } from "~/server/api/routers/lodge";
+import { poiRouter } from "~/server/api/routers/poi";
 import { settingsRouter } from "~/server/api/routers/settings";
 import { sightingRouter } from "~/server/api/routers/sighting";
 import { speciesRouter } from "~/server/api/routers/species";
@@ -12,6 +13,7 @@ export const appRouter = createTRPCRouter({
   checklist: checklistRouter,
   drive: driveRouter,
   lodge: lodgeRouter,
+  poi: poiRouter,
   settings: settingsRouter,
   sighting: sightingRouter,
   species: speciesRouter,

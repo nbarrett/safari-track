@@ -14,6 +14,10 @@
   --color-brand-teal: #468189;
 }
 
+html {
+  touch-action: manipulation;
+}
+
 @keyframes loader-spin {
   to {
     transform: rotate(360deg);

@@ -41,6 +41,19 @@ function haversineMetres(
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function computeBearing(
+  lat1: number, lng1: number,
+  lat2: number, lng2: number,
+): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const toDeg = (r: number) => (r * 180) / Math.PI;
+  const dLng = toRad(lng2 - lng1);
+  const y = Math.sin(dLng) * Math.cos(toRad(lat2));
+  const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) -
+    Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(dLng);
+  return (toDeg(Math.atan2(y, x)) + 360) % 360;
+}
+
 async function persistBuffer(points: GpsPoint[]) {
   if (!gpsStore) return;
   const existing = (await get<GpsPoint[]>(GPS_BUFFER_KEY, gpsStore)) ?? [];
@@ -61,7 +74,7 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
   const [tracking, setTracking] = useState(false);
   const [autoPaused, setAutoPaused] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentPosition, setCurrentPosition] = useState<GpsPoint | null>(null);
+  const [currentPosition, setCurrentPosition] = useState<GpsPoint & { bearing?: number } | null>(null);
   const bufferRef = useRef<GpsPoint[]>([]);
   const watchIdRef = useRef<number | null>(null);
   const flushIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -98,10 +111,13 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
         const { latitude, longitude, accuracy } = position.coords;
         const now = Date.now();
 
+        const prevAccepted = lastAcceptedRef.current;
+        const bearing = prevAccepted ? computeBearing(prevAccepted.lat, prevAccepted.lng, latitude, longitude) : undefined;
         setCurrentPosition({
           lat: latitude,
           lng: longitude,
           timestamp: new Date(now).toISOString(),
+          bearing,
         });
 
         if (accuracy > MAX_ACCURACY_M) return;

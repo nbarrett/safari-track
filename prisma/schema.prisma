@@ -106,6 +106,18 @@ model ChecklistItem {
   @@unique([userId, speciesId])
 }
 
+model PointOfInterest {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  category  String
+  icon      String   @default("pin")
+  latitude  Float
+  longitude Float
+  createdBy String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model AppSettings {
   id    String @id @default(auto()) @map("_id") @db.ObjectId
   key   String @unique
