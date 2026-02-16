@@ -31,19 +31,32 @@ export function OfflineImage({
     try {
       const cache = await caches.open("species-images");
       const cachedKeys = await cache.keys();
-      const match = cachedKeys.find((req) => {
+
+      const exactMatch = cachedKeys.find((req) => {
         const url = new URL(req.url);
         const srcUrl = new URL(src, window.location.origin);
         return url.pathname === srcUrl.pathname || req.url.includes(alt.replace(/\s+/g, "_"));
       });
 
-      if (match) {
-        setCurrentSrc(match.url);
+      if (exactMatch) {
+        setCurrentSrc(exactMatch.url);
         setStatus("fallback");
         return;
       }
+
+      const srcPath = new URL(src, window.location.origin).pathname;
+      const stemMatch = srcPath.match(/\/([^/]+?)(?:\.jpg|\.jpeg|\.png|\.gif|\.svg|\.webp)(?:\/|$)/i);
+      if (stemMatch?.[1]) {
+        const stem = stemMatch[1].replace(/^\d+px-/, "");
+        const fuzzyMatch = cachedKeys.find((req) => req.url.includes(stem));
+        if (fuzzyMatch) {
+          setCurrentSrc(fuzzyMatch.url);
+          setStatus("fallback");
+          return;
+        }
+      }
     } catch {
-      // caches API unavailable
+      /* caches API unavailable */
     }
 
     setStatus("placeholder");
