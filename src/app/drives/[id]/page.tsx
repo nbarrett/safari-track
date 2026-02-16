@@ -125,8 +125,8 @@ export default function DriveDetailPage() {
       <PageBackdrop />
 
       <div className="relative z-10 pb-8">
-        <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center gap-3 pr-12 lg:pr-0">
+        <div className="mx-auto max-w-7xl px-5 pt-2 sm:px-6 lg:px-8">
+          <div className="mb-2 flex flex-wrap items-center gap-3 pr-14 lg:pr-0">
             <Link
               href="/drives"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30"
@@ -146,7 +146,7 @@ export default function DriveDetailPage() {
             )}
           </div>
 
-          <div className="mt-1 text-sm text-white/70">
+          <div className="text-sm text-white/70">
             {drive.data.user.name} &middot;{" "}
             {formatDateTime(drive.data.startedAt)}
             {drive.data.endedAt && (
@@ -161,7 +161,7 @@ export default function DriveDetailPage() {
           </div>
 
           {stats.totalDistanceKm > 0 && (
-            <div className="mt-3 flex flex-wrap gap-4">
+            <div className="mt-5 flex flex-wrap gap-3">
               <StatBadge label="Distance" value={formatDistanceWithUnit(stats.totalDistanceKm, distanceUnit)} />
               <StatBadge label="Duration" value={formatDuration(stats.durationMinutes)} />
               <StatBadge label="Avg Speed" value={formatSpeedWithUnit(stats.avgSpeedKmh, distanceUnit)} />
@@ -171,7 +171,7 @@ export default function DriveDetailPage() {
           )}
         </div>
 
-        <div className="mx-auto max-w-7xl lg:flex lg:gap-4 lg:px-6">
+        <div className="mx-auto mt-6 max-w-7xl lg:flex lg:gap-4 lg:px-6">
           <div className="lg:flex-1">
             <DriveMap
               zoom={14}
@@ -182,7 +182,7 @@ export default function DriveDetailPage() {
             />
           </div>
 
-          <div className="mx-auto max-w-3xl px-4 pt-4 sm:px-6 lg:w-96 lg:max-w-none lg:px-0 lg:pt-0">
+          <div className="mx-auto max-w-3xl px-5 pt-6 sm:px-6 lg:w-96 lg:max-w-none lg:px-0 lg:pt-0">
             {drive.data.notes && (
               <div className="mb-4 rounded-lg bg-white/90 p-3 shadow-sm backdrop-blur">
                 <div className="text-xs font-medium uppercase text-brand-khaki">Notes</div>
