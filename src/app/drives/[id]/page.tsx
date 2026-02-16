@@ -126,7 +126,7 @@ export default function DriveDetailPage() {
 
       <div className="relative z-10 pb-8">
         <div className="mx-auto max-w-7xl px-4 pt-2 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 pr-14 lg:pr-0">
             <Link
               href="/drives"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30"
