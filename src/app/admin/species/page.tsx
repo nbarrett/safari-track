@@ -203,7 +203,7 @@ export default function AdminSpeciesPage() {
   return (
     <>
       <PageBackdrop />
-      <div className="relative z-10 mx-auto max-w-4xl px-4 py-8">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 pr-14 py-8 lg:pr-8">
         <h1 className="mb-6 text-2xl font-bold text-white">Species Management</h1>
 
         <form

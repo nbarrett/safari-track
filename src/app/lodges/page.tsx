@@ -10,7 +10,7 @@ export default function LodgesPage() {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-5xl px-6 py-12 sm:px-8">
+      <div className="relative z-10 mx-auto max-w-5xl px-6 pr-14 py-12 sm:px-8 lg:pr-8">
         <div className="text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-brand-gold">
             Greater Kruger, South Africa

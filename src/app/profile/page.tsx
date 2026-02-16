@@ -86,7 +86,7 @@ export default function ProfilePage() {
     <main className="relative min-h-screen">
       <PageBackdrop />
 
-      <div className="relative z-10 mx-auto max-w-lg px-4 py-6 sm:px-6">
+      <div className="relative z-10 mx-auto max-w-lg px-4 pr-14 py-6 sm:px-6 lg:pr-6">
         <Link href="/" className="text-sm text-brand-gold hover:text-brand-gold/80">
           &larr; Back to home
         </Link>
