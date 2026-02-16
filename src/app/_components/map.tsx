@@ -101,17 +101,23 @@ export function DriveMap({
   const routeInitialisedRef = useRef(false);
   const [heading, setHeading] = useState(0);
   const headingRef = useRef(0);
+  const needsPermissionRef = useRef(
+    typeof window !== "undefined" &&
+    typeof (DeviceOrientationEvent as unknown as { requestPermission?: unknown }).requestPermission === "function",
+  );
+  const [compassPermitted, setCompassPermitted] = useState(!needsPermissionRef.current);
 
   useEffect(() => {
     if (!compactControls) return;
+    if (needsPermissionRef.current && !compassPermitted) return;
 
     const handler = (event: DeviceOrientationEvent) => {
       const ios = (event as DeviceOrientationEvent & { webkitCompassHeading?: number }).webkitCompassHeading;
       let deg: number | null = null;
-      if (ios != null) {
+      if (ios != null && ios >= 0) {
         deg = ios;
-      } else if (event.alpha != null && event.absolute) {
-        deg = (360 - event.alpha) % 360;
+      } else if (event.alpha != null) {
+        deg = event.absolute ? (360 - event.alpha) % 360 : event.alpha;
       }
       if (deg == null) return;
       const rounded = Math.round(deg);
@@ -127,12 +133,15 @@ export function DriveMap({
       window.removeEventListener("deviceorientationabsolute" as string, handler as EventListener);
       window.removeEventListener("deviceorientation", handler);
     };
-  }, [compactControls]);
+  }, [compactControls, compassPermitted]);
 
-  const requestCompassPermission = () => {
+  const requestCompassPermission = async () => {
     const DOE = DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> };
     if (DOE.requestPermission) {
-      void DOE.requestPermission();
+      const result = await DOE.requestPermission();
+      if (result === "granted") {
+        setCompassPermitted(true);
+      }
     }
   };
 
@@ -353,11 +362,11 @@ export function DriveMap({
       {compactControls ? (
         <div className="absolute right-3 z-[1000] flex flex-col gap-2" style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}>
           <button
-            onClick={requestCompassPermission}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg transition active:scale-95"
+            onClick={() => void requestCompassPermission()}
+            className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition active:scale-95 ${compassPermitted ? "bg-white" : "bg-white/70 ring-2 ring-brand-gold"}`}
           >
             <svg className="h-9 w-9 transition-transform duration-200" viewBox="0 0 40 40" fill="none" style={{ transform: `rotate(${-heading}deg)` }}>
-              <polygon points="20,4 17.5,9 22.5,9" fill="#1f2937" />
+              <polygon points="20,4 17.5,9 22.5,9" fill={compassPermitted ? "#1f2937" : "#d97706"} />
               <polygon points="20,36 22.5,31 17.5,31" fill="#ef4444" />
               <line x1="35" y1="20" x2="32" y2="20" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
               <line x1="5" y1="20" x2="8" y2="20" stroke="#d1d5db" strokeWidth="1.5" strokeLinecap="round" />
