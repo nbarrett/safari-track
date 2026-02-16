@@ -99,21 +99,29 @@ export function Nav() {
               })}
             </div>
           </div>
-          {session ? (
-            <button
-              onClick={() => void handleSignOut()}
-              className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
-            >
-              Sign Out
-            </button>
-          ) : (
+          <div className="flex items-center gap-4">
             <Link
-              href="/auth/signin"
-              className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
+              href="/changelog"
+              className="text-sm text-white/30 transition hover:text-white/60"
             >
-              Sign In
+              v{APP_VERSION}
             </Link>
-          )}
+            {session ? (
+              <button
+                onClick={() => void handleSignOut()}
+                className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                href="/auth/signin"
+                className="rounded-md px-5 py-3 text-lg font-medium text-white/50 transition hover:text-white"
+              >
+                Sign In
+              </Link>
+            )}
+          </div>
         </div>
       </nav>
 
