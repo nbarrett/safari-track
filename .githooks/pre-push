@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+REMOTE="${1:-origin}"
+
 # Load nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
@@ -27,7 +29,15 @@ if [ "$should_run" = true ]; then
 
   echo "Pre-push: checking for version bump..."
   SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+  BEFORE_SHA=$(git rev-parse HEAD)
   node "$SCRIPT_DIR/../scripts/auto-changelog.mjs" || true
+  AFTER_SHA=$(git rev-parse HEAD)
+
+  if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
+    BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    echo "Pre-push: pushing version bump..."
+    git push --no-verify "$REMOTE" "$BRANCH"
+  fi
 
   echo "Pre-push checks passed. Proceeding with push."
 else
