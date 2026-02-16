@@ -91,6 +91,7 @@ If you cannot identify any species from the list, return an empty array: []`;
 
     return NextResponse.json({ detections });
   } catch (err) {
+    console.error("[photos/identify] Gemini error:", err);
     const message = err instanceof Error ? err.message : "AI detection failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }

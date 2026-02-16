@@ -43,6 +43,7 @@ export function PhotoCapture({
   const [detections, setDetections] = useState<Detection[]>([]);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [detectError, setDetectError] = useState<string | null>(null);
 
   const processPhoto = useCallback(
     async (file: File) => {
@@ -101,6 +102,9 @@ export function PhotoCapture({
             return { ...d, speciesId: species?.id };
           }).filter((d) => d.speciesId);
           setDetections(matched);
+        } else {
+          const errBody = (await identifyRes.json()) as { error?: string };
+          setDetectError(errBody.error ?? `Detection failed (${identifyRes.status})`);
         }
 
         setState("results");
@@ -191,6 +195,7 @@ export function PhotoCapture({
     setDetections([]);
     setPhotoUrl(null);
     setErrorMessage(null);
+    setDetectError(null);
     setState("idle");
     fileInputRef.current?.click();
   };
@@ -325,6 +330,12 @@ export function PhotoCapture({
                       </div>
                     ))}
                   </div>
+                </div>
+              ) : detectError ? (
+                <div className="rounded-xl bg-red-500/10 px-4 py-3 text-center">
+                  <div className="text-sm font-semibold text-red-600">Detection unavailable</div>
+                  <div className="mt-1 text-xs text-brand-khaki">{detectError}</div>
+                  <div className="mt-1 text-xs text-brand-khaki">Photo has been saved to the drive.</div>
                 </div>
               ) : (
                 <div className="rounded-xl bg-brand-cream/50 px-4 py-3 text-center text-sm text-brand-khaki">
