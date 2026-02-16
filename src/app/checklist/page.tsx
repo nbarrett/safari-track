@@ -16,6 +16,7 @@ const CATEGORY_CARDS = [
   { key: "Mammal", label: "Mammal", image: "/images/mammals.jpg" },
   { key: "Bird", label: "Bird", image: "/images/birds.jpg" },
   { key: "Reptile", label: "Reptile", image: "/hero-rhinos.webp" },
+  { key: "Creepy Crawlies", label: "Creepy Crawlies", image: "/hero-elephants.jpg" },
 ];
 
 export default function ChecklistPage() {
@@ -24,7 +25,7 @@ export default function ChecklistPage() {
   const searchParams = useSearchParams();
   const [activeCategory, setActiveCategory] = useState(() => {
     const cat = searchParams.get("category");
-    if (cat === "Mammal" || cat === "Bird" || cat === "Reptile") return cat;
+    if (cat === "Mammal" || cat === "Bird" || cat === "Reptile" || cat === "Creepy Crawlies") return cat;
     return "All";
   });
   const [showSpottedOnly, setShowSpottedOnly] = useState(() => searchParams.get("spotted") === "1");

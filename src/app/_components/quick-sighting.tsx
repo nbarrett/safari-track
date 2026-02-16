@@ -25,7 +25,7 @@ interface QuickSightingPanelProps {
   onCollapse?: () => void;
 }
 
-const CATEGORIES = ["All", "Mammal", "Bird", "Reptile"] as const;
+const CATEGORIES = ["All", "Mammal", "Bird", "Reptile", "Creepy Crawlies"] as const;
 
 function triggerHaptic() {
   if (typeof navigator !== "undefined" && "vibrate" in navigator) {

@@ -258,7 +258,13 @@ const REPTILES = [
   { commonName: "Leopard Tortoise", category: "Reptile" },
 ];
 
-const ALL_SPECIES = [...MAMMALS, ...BIRDS, ...REPTILES];
+const CREEPY_CRAWLIES = [
+  { commonName: "Millipede", category: "Creepy Crawlies" },
+  { commonName: "Orb Spider", category: "Creepy Crawlies" },
+  { commonName: "Velvet Mite", category: "Creepy Crawlies" },
+];
+
+const ALL_SPECIES = [...MAMMALS, ...BIRDS, ...REPTILES, ...CREEPY_CRAWLIES];
 
 async function main() {
   const lodges = [

@@ -2,9 +2,11 @@ import type { Prisma } from "../../../../generated/prisma";
 import { z } from "zod";
 
 import {
+  adminProcedure,
   createTRPCRouter,
   protectedProcedure,
 } from "~/server/api/trpc";
+import { haversineDistance } from "~/lib/drive-stats";
 
 const gpsPointSchema = z.object({
   lat: z.number(),
@@ -155,4 +157,74 @@ export const driveRouter = createTRPCRouter({
 
       return { items, nextCursor };
     }),
+
+  cleanRoutes: adminProcedure.mutation(async ({ ctx }) => {
+    const MAX_SPEED_MS = 33;
+    const NEAR_START_THRESHOLD_M = 200;
+
+    const drives = await ctx.db.driveSession.findMany({
+      where: { endedAt: { not: null } },
+      select: { id: true, route: true },
+    });
+
+    let drivesFixed = 0;
+    let pointsRemoved = 0;
+
+    for (const drive of drives) {
+      const route = (drive.route ?? []).filter(
+        (p): p is { lat: number; lng: number; timestamp: string } =>
+          p !== null &&
+          typeof p === "object" &&
+          !Array.isArray(p) &&
+          "lat" in p &&
+          "lng" in p &&
+          "timestamp" in p,
+      );
+
+      if (route.length < 3) continue;
+
+      const start = route[0]!;
+      const segments: (typeof route)[] = [[route[0]!]];
+
+      for (let i = 1; i < route.length; i++) {
+        const prev = route[i - 1]!;
+        const curr = route[i]!;
+        const dist = haversineDistance(prev.lat, prev.lng, curr.lat, curr.lng);
+        const dt =
+          (new Date(curr.timestamp).getTime() -
+            new Date(prev.timestamp).getTime()) /
+          1000;
+        const speed = dt > 0 ? dist / dt : Infinity;
+
+        if (speed > MAX_SPEED_MS) {
+          segments.push([curr]);
+        } else {
+          segments[segments.length - 1]!.push(curr);
+        }
+      }
+
+      const kept = segments.filter((segment, idx) => {
+        if (idx === 0) return true;
+        return !segment.every(
+          (p) =>
+            haversineDistance(start.lat, start.lng, p.lat, p.lng) <
+            NEAR_START_THRESHOLD_M,
+        );
+      });
+
+      const cleanedRoute = kept.flat();
+      const removed = route.length - cleanedRoute.length;
+
+      if (removed > 0) {
+        await ctx.db.driveSession.update({
+          where: { id: drive.id },
+          data: { route: cleanedRoute },
+        });
+        drivesFixed++;
+        pointsRemoved += removed;
+      }
+    }
+
+    return { drivesFixed, pointsRemoved };
+  }),
 });
