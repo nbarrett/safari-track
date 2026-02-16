@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.5.0";
+export const APP_VERSION = "1.6.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,18 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.6.0",
+    date: "16 Feb 2026",
+    title: "New features and fixes",
+    changes: [
+      "Show alternative species in detection results",
+      "Add paste-from-clipboard option in photo capture modal",
+      "Drive history header buttons overlapping burger menu",
+      "Photo sightings now update drive panel counts and trip state",
+      "Surface AI detection errors in photo capture UI",
+    ],
+  },
   {
     version: "1.5.0",
     date: "16 Feb 2026",
