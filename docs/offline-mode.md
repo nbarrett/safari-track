@@ -1,8 +1,8 @@
 # Offline-First Mode
 
-Safari Track is designed for game guides operating in reserves where cellular coverage is unreliable. The app works fully offline — storing data locally, caching images, and syncing to the server when connectivity returns.
+Safari Track is designed for guides, guests, and lodge staff operating in reserves where cellular coverage is unreliable. The app works fully offline — storing data locally, caching images, and syncing to the server when connectivity returns.
 
-## Getting Started (Guide Onboarding)
+## Getting Started (User Onboarding)
 
 The app must be set up **once while connected to Wi-Fi** (e.g. at the lodge). After that, it works fully offline in the reserve.
 
@@ -26,12 +26,12 @@ After the initial setup, tapping the home screen icon:
 1. Launches the app in standalone mode (no browser chrome, looks like a native app)
 2. The service worker serves the entire app from cache — no network request needed
 3. All data (species, checklist progress, lodge info) loads from IndexedDB
-4. The guide can start drives, log sightings, and browse the checklist with full images
+4. Users can start drives, log sightings, and browse the checklist with full images
 5. An amber "Offline" indicator appears in the nav bar
 
 ### Syncing when back online
 
-When the guide returns to Wi-Fi coverage (e.g. back at the lodge):
+When the user returns to Wi-Fi coverage (e.g. back at the lodge):
 
 1. Opening the app triggers the sync manager automatically
 2. All queued mutations (sightings, checklist toggles, drive data) are sent to the server
@@ -40,8 +40,8 @@ When the guide returns to Wi-Fi coverage (e.g. back at the lodge):
 
 ### Important notes
 
-- If a guide clears their browser data or hasn't opened the app in over 7 days, the cache may be evicted and the setup must be repeated on Wi-Fi
-- Map tiles are only cached for areas the guide has previously viewed while online — zoom and pan around the reserve's roads during the initial setup to pre-cache the area
+- If a user clears their browser data or hasn't opened the app in over 7 days, the cache may be evicted and the setup must be repeated on Wi-Fi
+- Map tiles are only cached for areas previously viewed while online — zoom and pan around the reserve's roads during the initial setup to pre-cache the area
 - The app must be in the foreground (open on screen) for sync to trigger — it does not sync in the background
 
 ## Platform Support
@@ -50,14 +50,14 @@ When the guide returns to Wi-Fi coverage (e.g. back at the lodge):
 |----------|---------|-------|
 | **Android (Chrome)** | Full | Installs like a native app. All offline features work reliably. |
 | **iPhone (Safari)** | Full with caveats | Service worker, caching, and IndexedDB all work. See iOS notes below. |
-| **Desktop (Chrome/Edge/Firefox)** | Full | Useful for lodge managers reviewing drive history on a laptop. |
+| **Desktop (Chrome/Edge/Firefox)** | Full | Useful for reviewing drive history and managing species on a laptop. |
 
 ### iOS-specific behaviour
 
-- **No background sync** — the app only syncs when opened in the foreground. This is fine for the typical workflow (guide returns to lodge, opens app on Wi-Fi).
+- **No background sync** — the app only syncs when opened in the foreground. This is fine for the typical workflow (return to lodge, open app on Wi-Fi).
 - **Cache eviction** — iOS may clear cached data if the PWA hasn't been opened in approximately 7 days. Daily use prevents this.
 - **Screen auto-lock** — iOS may lock the screen during long drives. Guides should adjust their Auto-Lock setting (Settings > Display & Brightness > Auto-Lock > Never) to keep GPS tracking active during a drive.
-- **GPS permission** — on first use, Safari will prompt for location access. The guide must tap "Allow" for drive tracking to work. If using the home screen app, iOS may prompt again separately.
+- **GPS permission** — on first use, Safari will prompt for location access. Tap "Allow" for drive tracking to work. If using the home screen app, iOS may prompt again separately.
 
 ## How It Works
 

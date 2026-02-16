@@ -5,7 +5,7 @@
 <h1 align="center">Safari Track</h1>
 
 <p align="center">
-  <strong>GPS-tracked game drives and wildlife sighting logs for safari lodges</strong>
+  <strong>GPS-tracked game drives and wildlife sighting logs for guides, guests, and lodges</strong>
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
 
 ## For the Business Owner
 
-**Safari Track is a mobile app that your game guides carry on every drive.** It records their GPS route in real time, lets them tap to log every animal they spot, and builds a personal wildlife checklist for each guide. When the drive is over, guests and lodge managers can review a beautiful map of the route with every sighting pinned to the exact location. Everything works offline in the bush and syncs automatically when back in Wi-Fi range. Think of it as Strava for safari guides — but instead of tracking fitness, it tracks wildlife encounters across your lodge.
+**Safari Track is a mobile app for everyone on safari — guides, guests, and lodge managers.** Guides record their GPS route in real time and tap to log every animal they spot. Guests follow along on their own device, browse the wildlife checklist, and relive drives afterwards on a beautiful map with every sighting pinned to the exact location. Lodge managers oversee all drive history and species data across the property. Everything works offline in the bush and syncs automatically when back in Wi-Fi range. Think of it as Strava for safari — but instead of tracking fitness, it tracks wildlife encounters across your lodge.
 
 ---
 
@@ -138,7 +138,7 @@
 
 | Model | Purpose |
 |-------|---------|
-| **User** | Guide account with role (ADMIN/GUIDE/VIEWER) and lodge |
+| **User** | Account with role (ADMIN/GUIDE/VIEWER) and lodge |
 | **Lodge** | Safari camp with GPS coordinates and branding |
 | **Species** | Wildlife catalogue — 243+ species with images |
 | **DriveSession** | Game drive with GPS route, photos, and timestamps |

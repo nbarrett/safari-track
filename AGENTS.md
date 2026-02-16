@@ -86,7 +86,7 @@
 - Global theme in `src/styles/globals.css` using `@theme` block
 - Brand colours: `brand-brown`, `brand-khaki`, `brand-gold`, `brand-green`, `brand-cream`, `brand-dark`, `brand-teal`
 - PostCSS config must be `.mjs` (not `.ts`) for Turbopack compatibility
-- Mobile-first design - this is primarily a mobile web app for game guides in the field
+- Mobile-first design - this is primarily a mobile web app for guides, guests, and lodge staff in the field
 
 ## Authentication
 
