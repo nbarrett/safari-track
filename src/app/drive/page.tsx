@@ -16,11 +16,6 @@ import { generateTempId, enqueue } from "~/lib/offline-queue";
 import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints, addLocalSighting } from "~/lib/drive-store";
 import { getActiveTrip, addDriveToTrip, setActiveTrip, updateTripSpecies, type TripSpecies } from "~/lib/trip-store";
 import { haversineDistance } from "~/lib/drive-stats";
-import {
-  requestNotificationPermission,
-  showDriveNotification,
-  clearDriveNotification,
-} from "~/lib/drive-notification";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
@@ -290,23 +285,6 @@ export default function DrivePage() {
 
   const totalSightingCount = Math.max(sightingMarkers.length, localSightingCount);
 
-  useEffect(() => {
-    const startTime = localStartedAt ?? driveSession?.startedAt;
-    if (!driveId || !startTime) return;
-
-    const update = () => {
-      const secs = Math.floor((Date.now() - new Date(startTime).getTime()) / 1000);
-      void showDriveNotification(formatDuration(secs), formatDistance(totalDistanceM, distanceUnit));
-    };
-
-    update();
-    const interval = setInterval(update, 10_000);
-    return () => {
-      clearInterval(interval);
-      void clearDriveNotification();
-    };
-  }, [driveId, localStartedAt, driveSession?.startedAt, totalDistanceM, distanceUnit]);
-
   if (status === "loading") {
     return <div className="flex flex-1 items-center justify-center text-brand-khaki">Loading...</div>;
   }
@@ -342,8 +320,6 @@ export default function DrivePage() {
     setMutationError(null);
     setStarting(true);
     void clearPersistedBuffer();
-
-    void requestNotificationPermission();
 
     if (!navigator.onLine) {
       const tempId = generateTempId();
@@ -390,7 +366,7 @@ export default function DrivePage() {
   };
 
   const handleSaveDrive = () => {
-    void clearDriveNotification();
+    setShowFinishModal(false);
     const id = driveSession?.id ?? localDriveId;
     if (id) {
       savedDriveIdRef.current = id;
@@ -400,7 +376,6 @@ export default function DrivePage() {
 
   const handleDiscardDrive = () => {
     setShowFinishModal(false);
-    void clearDriveNotification();
     const id = driveSession?.id ?? localDriveId;
     if (id) {
       discardDriveMutation.mutate(

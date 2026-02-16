@@ -269,10 +269,9 @@ export function QuickSightingPanel({
                 {filteredBrowseSpecies.map((species) => {
                   const count = sightedMap.get(species.id) ?? 0;
                   return (
-                    <button
+                    <div
                       key={species.id}
-                      onClick={() => logSighting(species)}
-                      className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition active:bg-brand-green/10"
+                      className="flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5"
                     >
                       <div className="relative shrink-0">
                         <OfflineImage
@@ -293,14 +292,19 @@ export function QuickSightingPanel({
                         </div>
                         <div className="text-xs text-brand-khaki">{species.category}</div>
                       </div>
-                      <div
-                        role="button"
-                        onClick={(e) => { e.stopPropagation(); logSighting(species, true); }}
+                      <button
+                        onClick={() => logSighting(species)}
+                        className="shrink-0 rounded-lg bg-brand-green px-2.5 py-1 text-[10px] font-semibold text-white transition active:scale-95 active:bg-brand-green/80"
+                      >
+                        Seen
+                      </button>
+                      <button
+                        onClick={() => logSighting(species, true)}
                         className="shrink-0 rounded-lg bg-brand-cream/60 px-2 py-1 text-[10px] font-semibold text-brand-khaki transition active:scale-95 active:bg-brand-gold/20"
                       >
                         Heard
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   );
                 })}
               </div>

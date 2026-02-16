@@ -5,7 +5,7 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { AuthSessionProvider } from "~/app/_components/session-provider";
-import { Nav } from "~/app/_components/nav";
+import { ClientNav } from "~/app/_components/client-nav";
 import { InstallPrompt } from "~/app/_components/install-prompt";
 import { SwProvider } from "~/app/_components/sw-provider";
 import { SyncIndicator } from "~/app/_components/sync-indicator";
@@ -102,7 +102,7 @@ export default function RootLayout({
             <SwProvider>
               <LoaderDismiss />
               <InstallPrompt />
-              <Nav />
+              <ClientNav />
               <OfflineErrorBoundary>
                 {children}
               </OfflineErrorBoundary>
