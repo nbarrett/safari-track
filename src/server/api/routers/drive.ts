@@ -46,6 +46,24 @@ export const driveRouter = createTRPCRouter({
       });
     }),
 
+  deleteMany: protectedProcedure
+    .input(z.object({ ids: z.array(z.string()).min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const drives = await ctx.db.driveSession.findMany({
+        where: { id: { in: input.ids }, userId: ctx.session.user.id },
+        select: { id: true },
+      });
+      const ownedIds = drives.map((d) => d.id);
+      if (ownedIds.length === 0) return { deleted: 0 };
+      await ctx.db.sighting.deleteMany({
+        where: { driveSessionId: { in: ownedIds } },
+      });
+      const result = await ctx.db.driveSession.deleteMany({
+        where: { id: { in: ownedIds } },
+      });
+      return { deleted: result.count };
+    }),
+
   addRoutePoints: protectedProcedure
     .input(
       z.object({
@@ -121,7 +139,7 @@ export const driveRouter = createTRPCRouter({
         ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
         orderBy: { startedAt: "desc" },
         include: {
-          user: { select: { name: true } },
+          user: { select: { id: true, name: true } },
           _count: { select: { sightings: true } },
         },
       });
