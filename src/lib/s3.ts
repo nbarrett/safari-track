@@ -3,7 +3,7 @@ import { env } from "~/env";
 
 function getClient() {
   return new S3Client({
-    region: env.AWS_S3_REGION ?? "af-south-1",
+    region: env.AWS_S3_REGION ?? "eu-west-1",
     credentials: {
       accessKeyId: env.AWS_ACCESS_KEY_ID ?? "",
       secretAccessKey: env.AWS_SECRET_ACCESS_KEY ?? "",
@@ -33,6 +33,6 @@ export async function uploadToS3(
 
 export function getPublicUrl(key: string): string {
   const bucket = env.AWS_S3_BUCKET ?? "";
-  const region = env.AWS_S3_REGION ?? "af-south-1";
+  const region = env.AWS_S3_REGION ?? "eu-west-1";
   return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 }
