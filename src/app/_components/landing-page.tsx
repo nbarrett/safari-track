@@ -21,12 +21,12 @@ const FEATURES = [
 export function LandingPage() {
   return (
     <main
-      className="relative min-h-screen bg-cover bg-center"
+      className="relative min-h-screen bg-brand-dark bg-cover bg-center"
       style={{ backgroundImage: "url('/hero-elephants.jpg')" }}
     >
       <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/70" />
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-between px-6 py-12">
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-between px-6 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-12">
         <div className="flex flex-col items-center text-center">
           <Image
             src="/logo-icon.png"
@@ -82,12 +82,6 @@ export function LandingPage() {
               className="block w-full rounded-lg border border-white/30 px-6 py-3 text-center font-medium text-white transition hover:bg-white/10"
             >
               Explore Our Lodges
-            </Link>
-            <Link
-              href="/checklist"
-              className="block w-full rounded-lg border border-white/30 px-6 py-3 text-center font-medium text-white transition hover:bg-white/10"
-            >
-              Species Checklist
             </Link>
           </div>
         </div>

@@ -11,6 +11,17 @@ export default function LodgesPage() {
       <PageBackdrop />
 
       <div className="relative z-10 mx-auto max-w-5xl px-6 py-12 sm:px-8">
+        <div className="mb-2">
+          <Link
+            href="/"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur transition hover:bg-white/30"
+          >
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+          </Link>
+        </div>
+
         <div className="text-center">
           <p className="text-sm font-medium uppercase tracking-widest text-brand-gold">
             Greater Kruger, South Africa
