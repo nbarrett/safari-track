@@ -105,6 +105,7 @@ export default function DriveDetailPage() {
     speciesName: s.species.commonName,
     count: s.count,
     notes: s.notes,
+    imageUrl: s.imageUrl ?? s.species.imageUrl,
   }));
 
   const stats = calculateDriveStats(routePoints, drive.data.sightings.length);

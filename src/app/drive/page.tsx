@@ -173,7 +173,8 @@ export default function DrivePage() {
   const offlineEndDrive = useOfflineMutation({
     path: "drive.end",
     mutationFn: (input: { id: string }) => endDriveMutation.mutateAsync(input),
-    onSuccess: (_result, input) => {
+    onSuccess: (result, input) => {
+      if (!result) return;
       const savedId = savedDriveIdRef.current ?? input.id;
       setRoutePoints([]);
       setMutationError(null);
@@ -191,16 +192,16 @@ export default function DrivePage() {
       setShowFinishModal(false);
       setMutationError(err.message);
     },
-    onOfflineQueued: (input) => {
-      const savedId = savedDriveIdRef.current ?? input.id;
+    onOfflineQueued: () => {
       setRoutePoints([]);
       setLocalDriveId(null);
       setLocalStartedAt(null);
       setInitialQuickSpecies([]);
       setShowFinishModal(false);
+      setLocalSightingCount(0);
+      setLocalSpeciesCount(0);
       void clearLocalDrive();
       void clearPersistedBuffer();
-      router.push(`/drives/${savedId}`);
     },
   });
 

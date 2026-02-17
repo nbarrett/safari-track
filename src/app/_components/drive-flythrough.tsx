@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import L from "leaflet";
 import { haversineDistance } from "~/lib/drive-stats";
+import { OfflineImage } from "~/app/_components/offline-image";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
@@ -30,6 +31,7 @@ interface SightingMarker {
   speciesName: string;
   count: number;
   notes?: string | null;
+  imageUrl?: string | null;
 }
 
 interface FlythroughProps {
@@ -238,12 +240,24 @@ export function DriveFlythrough({ route, photos, sightings, onClose }: Flythroug
 
         {activeSighting && (
           <div className="absolute inset-0 z-[2000] flex items-center justify-center bg-black/70 p-4">
-            <div className="rounded-xl bg-white/95 p-6 text-center backdrop-blur">
-              <div className="text-2xl font-bold text-brand-dark">{activeSighting.speciesName}</div>
-              <div className="mt-1 text-lg text-brand-khaki">Count: {activeSighting.count}</div>
-              {activeSighting.notes && (
-                <div className="mt-2 text-sm text-brand-khaki">{activeSighting.notes}</div>
+            <div className="max-w-[80vw] overflow-hidden rounded-xl bg-white shadow-2xl">
+              {activeSighting.imageUrl && (
+                <div className="relative h-52 w-72 overflow-hidden">
+                  <OfflineImage
+                    src={activeSighting.imageUrl}
+                    alt={activeSighting.speciesName}
+                    className="h-52 w-72 object-cover"
+                    placeholderClassName="h-52 w-72"
+                  />
+                </div>
               )}
+              <div className="px-5 py-3 text-center">
+                <div className="text-xl font-bold text-brand-dark">{activeSighting.speciesName}</div>
+                <div className="mt-0.5 text-sm text-brand-khaki">
+                  Count: {activeSighting.count}
+                  {activeSighting.notes && <> &middot; {activeSighting.notes}</>}
+                </div>
+              </div>
             </div>
           </div>
         )}
