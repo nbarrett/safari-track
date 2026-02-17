@@ -85,6 +85,19 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
   const lastMovementRef = useRef<number>(Date.now());
   const autoPauseRef = useRef(autoPause);
   autoPauseRef.current = autoPause;
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
+
+  const acquireWakeLock = useCallback(() => {
+    if (!("wakeLock" in navigator)) return;
+    void navigator.wakeLock.request("screen").then((lock) => {
+      wakeLockRef.current = lock;
+    }).catch(() => {});
+  }, []);
+
+  const releaseWakeLock = useCallback(() => {
+    void wakeLockRef.current?.release();
+    wakeLockRef.current = null;
+  }, []);
 
   useEffect(() => {
     if (!driveId) return;
@@ -104,6 +117,13 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
     }
     if (flushIntervalRef.current) {
       clearInterval(flushIntervalRef.current);
+    }
+
+    if (bufferRef.current.length > 0) {
+      const pending = bufferRef.current;
+      onPointsRef.current(pending);
+      void persistBuffer(pending);
+      bufferRef.current = [];
     }
 
     watchIdRef.current = navigator.geolocation.watchPosition(
@@ -187,11 +207,13 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
     lastAcceptedRef.current = null;
     lastMovementRef.current = Date.now();
 
+    acquireWakeLock();
     beginWatch();
-  }, [beginWatch]);
+  }, [beginWatch, acquireWakeLock]);
 
   const stopTracking = useCallback(() => {
     trackingRef.current = false;
+    releaseWakeLock();
 
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -210,26 +232,34 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
     }
 
     setTracking(false);
-  }, []);
+  }, [releaseWakeLock]);
 
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && trackingRef.current) {
         lastAcceptedRef.current = null;
+        acquireWakeLock();
         beginWatch();
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+      releaseWakeLock();
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
       if (flushIntervalRef.current) {
         clearInterval(flushIntervalRef.current);
       }
+      if (bufferRef.current.length > 0) {
+        const remaining = bufferRef.current;
+        onPointsRef.current(remaining);
+        void persistBuffer(remaining);
+        bufferRef.current = [];
+      }
     };
-  }, [beginWatch]);
+  }, [beginWatch, acquireWakeLock, releaseWakeLock]);
 
   return { tracking, autoPaused, error, currentPosition, startTracking, stopTracking };
 }

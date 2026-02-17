@@ -161,6 +161,7 @@ export default function DrivePage() {
   });
 
   const sendingRef = useRef(false);
+  const pendingPointsRef = useRef<GpsPoint[]>([]);
 
   const offlineAddRoutePoints = useOfflineMutation({
     path: "drive.addRoutePoints",
@@ -209,6 +210,20 @@ export default function DrivePage() {
   const driveIdRef = useRef(driveId);
   driveIdRef.current = driveId;
 
+  const flushPendingPoints = useCallback(() => {
+    const id = driveIdRef.current;
+    if (!id || sendingRef.current || pendingPointsRef.current.length === 0) return;
+    sendingRef.current = true;
+    const batch = pendingPointsRef.current;
+    pendingPointsRef.current = [];
+    offlineAddRoutePoints
+      .mutateAsync({ id, points: batch })
+      .finally(() => {
+        sendingRef.current = false;
+        if (pendingPointsRef.current.length > 0) flushPendingPoints();
+      });
+  }, [offlineAddRoutePoints]);
+
   const handleGpsPoints = useCallback(
     (points: GpsPoint[]) => {
       setRoutePoints((prev) => {
@@ -218,16 +233,10 @@ export default function DrivePage() {
         return newPoints.length > 0 ? [...prev, ...newPoints] : prev;
       });
       void addLocalRoutePoints(points);
-      const id = driveIdRef.current;
-      if (!id || sendingRef.current) return;
-      sendingRef.current = true;
-      offlineAddRoutePoints
-        .mutateAsync({ id, points })
-        .finally(() => {
-          sendingRef.current = false;
-        });
+      pendingPointsRef.current = [...pendingPointsRef.current, ...points];
+      flushPendingPoints();
     },
-    [offlineAddRoutePoints],
+    [flushPendingPoints],
   );
 
   const { tracking, autoPaused, error: gpsError, currentPosition, startTracking, stopTracking } =
@@ -442,7 +451,7 @@ export default function DrivePage() {
       />
 
       <Link
-        href="/"
+        href="/?home"
         className="absolute left-3 z-[1000] flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg transition active:scale-95"
         style={{ top: "calc(env(safe-area-inset-top) + 0.75rem)" }}
       >

@@ -18,22 +18,28 @@ interface OfflineMutationResult<TInput> {
   isOfflineQueued: boolean;
 }
 
-function isNetworkError(err: unknown): boolean {
+const NON_RETRYABLE_CODES = new Set([
+  "BAD_REQUEST",
+  "UNAUTHORIZED",
+  "FORBIDDEN",
+  "NOT_FOUND",
+  "CONFLICT",
+  "PARSE_ERROR",
+  "UNPROCESSABLE_CONTENT",
+]);
+
+function isTransientError(err: unknown): boolean {
   if (!navigator.onLine) return true;
 
-  if (err instanceof TypeError) {
-    const msg = err.message.toLowerCase();
-    if (msg.includes("fetch") || msg.includes("network")) return true;
-  }
+  const shape = (err as { shape?: { data?: { code?: string } } })?.shape;
+  if (shape?.data?.code && NON_RETRYABLE_CODES.has(shape.data.code)) return false;
+
+  if (err instanceof TypeError) return true;
 
   const cause = (err as { cause?: unknown })?.cause;
-  if (cause instanceof TypeError) {
-    const msg = cause.message.toLowerCase();
-    if (msg.includes("fetch") || msg.includes("network")) return true;
-  }
+  if (cause instanceof TypeError) return true;
 
-  const code = (err as { shape?: { data?: { code?: string } } })?.shape?.data?.code;
-  if (code === "TIMEOUT" || code === "CLIENT_CLOSED_REQUEST") return true;
+  if (!shape) return true;
 
   return false;
 }
@@ -52,7 +58,7 @@ export function useOfflineMutation<TInput, TResult = unknown>(
           const result = await options.mutationFn(input);
           options.onSuccess?.(result, input);
         } catch (err) {
-          if (isNetworkError(err)) {
+          if (isTransientError(err)) {
             await enqueue(options.path, input);
             setIsOfflineQueued(true);
             options.onOfflineQueued?.(input);

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { PageBackdrop } from "~/app/_components/page-backdrop";
 import { getLocalDrive } from "~/lib/drive-store";
@@ -15,10 +16,17 @@ interface HomeContentProps {
 export function HomeContent({ userName }: HomeContentProps) {
   const activeDrive = api.drive.active.useQuery();
   const [hasLocalDrive, setHasLocalDrive] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    void getLocalDrive().then((drive) => setHasLocalDrive(!!drive));
-  }, []);
+    void getLocalDrive().then((drive) => {
+      setHasLocalDrive(!!drive);
+      const isIntentional = new URLSearchParams(window.location.search).has("home");
+      if (drive && !isIntentional) {
+        router.replace("/drive");
+      }
+    });
+  }, [router]);
   const recentSightings = api.sighting.recent.useQuery({ limit: 5 });
   const recentDrives = api.drive.list.useQuery({ limit: 5 });
   const lodge = api.lodge.mine.useQuery();
