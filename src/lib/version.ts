@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.8.0";
+export const APP_VERSION = "1.8.1";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.8.1",
+    date: "17 Feb 2026",
+    title: "Bug fixes",
+    changes: [
+      "Update readme",
+    ],
+  },
   {
     version: "1.8.0",
     date: "17 Feb 2026",
