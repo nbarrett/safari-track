@@ -52,5 +52,4 @@ public/sw.js.map
 public/swe-worker-*.js
 
 # capacitor native projects
-/ios
 /android
