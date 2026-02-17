@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { get, set, createStore } from "idb-keyval";
+import { isNative } from "~/lib/native";
+import { startNativeGeolocation, stopNativeGeolocation } from "~/lib/native-geolocation";
 
 interface GpsPoint {
   lat: number;
@@ -111,6 +113,51 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
 
   const trackingRef = useRef(false);
 
+  const handleRawPosition = useCallback((latitude: number, longitude: number, accuracy: number | null) => {
+    const now = Date.now();
+
+    const prevAccepted = lastAcceptedRef.current;
+    const bearing = prevAccepted ? computeBearing(prevAccepted.lat, prevAccepted.lng, latitude, longitude) : undefined;
+    setCurrentPosition({
+      lat: latitude,
+      lng: longitude,
+      timestamp: new Date(now).toISOString(),
+      bearing,
+    });
+
+    if (accuracy !== null && accuracy > MAX_ACCURACY_M) return;
+
+    const last = lastAcceptedRef.current;
+    if (last) {
+      const dist = haversineMetres(last.lat, last.lng, latitude, longitude);
+
+      if (autoPauseRef.current) {
+        if (dist >= AUTO_RESUME_DISTANCE_M) {
+          lastMovementRef.current = now;
+          setAutoPaused(false);
+        } else if (now - lastMovementRef.current > AUTO_PAUSE_AFTER_MS) {
+          setAutoPaused(true);
+          return;
+        }
+      }
+
+      if (dist < MIN_DISTANCE_M) return;
+
+      const dt = (now - last.time) / 1000;
+      if (dt > 0 && dist / dt > MAX_SPEED_MS) return;
+    } else {
+      lastMovementRef.current = now;
+    }
+
+    const point: GpsPoint = {
+      lat: latitude,
+      lng: longitude,
+      timestamp: new Date(now).toISOString(),
+    };
+    lastAcceptedRef.current = { lat: latitude, lng: longitude, time: now };
+    bufferRef.current = [...bufferRef.current, point];
+  }, []);
+
   const beginWatch = useCallback(() => {
     if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
@@ -126,63 +173,26 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
       bufferRef.current = [];
     }
 
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (position) => {
-        const { latitude, longitude, accuracy } = position.coords;
-        const now = Date.now();
-
-        const prevAccepted = lastAcceptedRef.current;
-        const bearing = prevAccepted ? computeBearing(prevAccepted.lat, prevAccepted.lng, latitude, longitude) : undefined;
-        setCurrentPosition({
-          lat: latitude,
-          lng: longitude,
-          timestamp: new Date(now).toISOString(),
-          bearing,
-        });
-
-        if (accuracy > MAX_ACCURACY_M) return;
-
-        const last = lastAcceptedRef.current;
-        if (last) {
-          const dist = haversineMetres(last.lat, last.lng, latitude, longitude);
-
-          if (autoPauseRef.current) {
-            if (dist >= AUTO_RESUME_DISTANCE_M) {
-              lastMovementRef.current = now;
-              setAutoPaused(false);
-            } else if (now - lastMovementRef.current > AUTO_PAUSE_AFTER_MS) {
-              setAutoPaused(true);
-              return;
-            }
+    if (isNative()) {
+      void startNativeGeolocation(
+        (nativePoint) => handleRawPosition(nativePoint.lat, nativePoint.lng, null),
+        (message) => setError(message),
+      );
+    } else {
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (position) => handleRawPosition(position.coords.latitude, position.coords.longitude, position.coords.accuracy),
+        (err) => {
+          if (err.code === GeolocationPositionError.PERMISSION_DENIED) {
+            setError("Location permission denied");
           }
-
-          if (dist < MIN_DISTANCE_M) return;
-
-          const dt = (now - last.time) / 1000;
-          if (dt > 0 && dist / dt > MAX_SPEED_MS) return;
-        } else {
-          lastMovementRef.current = now;
-        }
-
-        const point: GpsPoint = {
-          lat: latitude,
-          lng: longitude,
-          timestamp: new Date(now).toISOString(),
-        };
-        lastAcceptedRef.current = { lat: latitude, lng: longitude, time: now };
-        bufferRef.current = [...bufferRef.current, point];
-      },
-      (err) => {
-        if (err.code === GeolocationPositionError.PERMISSION_DENIED) {
-          setError("Location permission denied");
-        }
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 15000,
-      },
-    );
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+          timeout: 15000,
+        },
+      );
+    }
 
     flushIntervalRef.current = setInterval(() => {
       if (bufferRef.current.length > 0) {
@@ -192,7 +202,7 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
         bufferRef.current = [];
       }
     }, intervalMs);
-  }, [intervalMs]);
+  }, [intervalMs, handleRawPosition]);
 
   const startTracking = useCallback(() => {
     if (!navigator.geolocation) {
@@ -215,7 +225,9 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
     trackingRef.current = false;
     releaseWakeLock();
 
-    if (watchIdRef.current !== null) {
+    if (isNative()) {
+      void stopNativeGeolocation();
+    } else if (watchIdRef.current !== null) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
     }
@@ -237,16 +249,26 @@ export function useGpsTracker({ intervalMs = 5000, driveId, onPoints, autoPause 
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === "visible" && trackingRef.current) {
-        lastAcceptedRef.current = null;
-        acquireWakeLock();
-        beginWatch();
+        if (!isNative()) {
+          lastAcceptedRef.current = null;
+          acquireWakeLock();
+          beginWatch();
+        }
+        if (bufferRef.current.length > 0) {
+          const points = bufferRef.current;
+          onPointsRef.current(points);
+          void persistBuffer(points);
+          bufferRef.current = [];
+        }
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
       releaseWakeLock();
-      if (watchIdRef.current !== null) {
+      if (isNative()) {
+        void stopNativeGeolocation();
+      } else if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
       if (flushIntervalRef.current) {

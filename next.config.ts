@@ -17,6 +17,14 @@ const withSerwist = withSerwistInit({
 const config: NextConfig = {
   output: "standalone",
   outputFileTracingRoot: __dirname,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "safari-track.fly.dev",
+      },
+    ],
+  },
 };
 
 export default withSerwist(config);

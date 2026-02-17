@@ -50,3 +50,7 @@ package-lock.json
 public/sw.js
 public/sw.js.map
 public/swe-worker-*.js
+
+# capacitor native projects
+/ios
+/android

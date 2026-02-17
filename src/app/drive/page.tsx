@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { redirect, useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
+import { App } from "@capacitor/app";
+import { isNative } from "~/lib/native";
 import { useGpsTracker, clearPersistedBuffer } from "~/app/_components/gps-tracker";
 import { QuickSightingPanel } from "~/app/_components/quick-sighting";
 import { TripSummary } from "~/app/_components/trip-summary";
@@ -223,6 +225,18 @@ export default function DrivePage() {
         if (pendingPointsRef.current.length > 0) flushPendingPoints();
       });
   }, [offlineAddRoutePoints]);
+
+  useEffect(() => {
+    if (!isNative()) return;
+    const listener = App.addListener("appStateChange", ({ isActive }) => {
+      if (isActive) {
+        flushPendingPoints();
+      }
+    });
+    return () => {
+      void listener.then((l) => l.remove());
+    };
+  }, [flushPendingPoints]);
 
   const handleGpsPoints = useCallback(
     (points: GpsPoint[]) => {

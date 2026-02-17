@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import ExifReader from "exifreader";
 import { savePendingPhoto } from "~/lib/photo-store";
+import { isNative } from "~/lib/native";
+import { takeNativePhoto, pickNativePhoto } from "~/lib/native-camera";
 
 interface Detection {
   commonName: string;
@@ -259,7 +261,23 @@ export function PhotoCapture({
   };
 
   const openCamera = () => {
-    fileInputRef.current?.click();
+    if (isNative()) {
+      void takeNativePhoto().then((file) => {
+        if (file) void processPhoto(file);
+      });
+    } else {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const openGallery = () => {
+    if (isNative()) {
+      void pickNativePhoto().then((file) => {
+        if (file) void processPhoto(file);
+      });
+    } else {
+      galleryInputRef.current?.click();
+    }
   };
 
   return (
@@ -311,7 +329,7 @@ export function PhotoCapture({
                 </div>
                 <div className="flex flex-col items-center gap-2">
                   <button
-                    onClick={() => galleryInputRef.current?.click()}
+                    onClick={openGallery}
                     className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-500 shadow-lg transition active:scale-95"
                   >
                     <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
