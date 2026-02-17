@@ -14,11 +14,7 @@ const config: CapacitorConfig = {
   android: {
     useLegacyBridge: true,
   },
-  plugins: {
-    PushNotifications: {
-      presentationOptions: ["badge", "sound", "alert"],
-    },
-  },
+  plugins: {},
 };
 
 export default config;

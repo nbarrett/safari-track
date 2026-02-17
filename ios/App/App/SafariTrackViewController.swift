@@ -10,10 +10,6 @@ class SafariTrackViewController: CAPBridgeViewController {
         return webConfig
     }
 
-    override func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-        super.webView(webView, didFail: navigation, withError: error)
-    }
-
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
         webView.reload()
     }

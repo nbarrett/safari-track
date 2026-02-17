@@ -205,6 +205,49 @@ The seed creates 3 lodges, 243+ species, and 1 admin user.
 | `pnpm db:seed` | Seed species and admin user |
 | `pnpm db:studio` | Prisma Studio (database GUI) |
 
+## iOS / Native Development
+
+### Prerequisites
+
+- **Xcode** 14+ (for Live Activities and Dynamic Island support, iOS 16.2+ device)
+- **Apple Developer account** enrolled in the program (for device builds)
+
+### Workflow
+
+```bash
+pnpm build            # Build the Next.js web output (required before sync)
+pnpm cap:sync         # Copy web output into the iOS project and sync plugins
+pnpm cap:ios          # Open the iOS project in Xcode
+```
+
+Run these in order whenever you change web code and want to test on device. Once Xcode is open, press **⌘R** to build and run on the connected device.
+
+### iOS Project Structure
+
+```
+ios/App/
+  App/
+    AppDelegate.swift           # Capacitor app entry point
+    LiveActivityPlugin.swift    # ActivityKit bridge (start/update/end live activity)
+    App.entitlements            # App Groups capability (group.com.safaritrack.app)
+    Info.plist                  # Permissions and NSSupportsLiveActivities
+  DriveWidget/
+    DriveActivityAttributes.swift   # Shared Live Activity data model
+    DriveWidgetLiveActivity.swift   # Lock screen + Dynamic Island SwiftUI UI
+    DriveWidgetBundle.swift         # Widget extension entry point
+    DriveWidget.entitlements        # App Groups capability (matches main app)
+    Info.plist                      # Widget extension config
+  CapApp-SPM/
+    Package.swift               # Swift Package Manager plugin dependencies
+```
+
+### Capacitor Scripts
+
+| Script | Description |
+|--------|-------------|
+| `pnpm cap:sync` | Copy web build into iOS project and sync plugin changes |
+| `pnpm cap:ios` | Open `ios/App/App.xcodeproj` in Xcode |
+
 ## Project Structure
 
 ```

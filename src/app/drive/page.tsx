@@ -18,6 +18,7 @@ import { generateTempId, enqueue } from "~/lib/offline-queue";
 import { getLocalDrive, setLocalDrive, clearLocalDrive, addLocalRoutePoints, addLocalSighting } from "~/lib/drive-store";
 import { getActiveTrip, addDriveToTrip, setActiveTrip, updateTripSpecies, type TripSpecies } from "~/lib/trip-store";
 import { haversineDistance } from "~/lib/drive-stats";
+import { startLiveActivity, updateLiveActivity, endLiveActivity } from "~/lib/live-activity";
 
 const DriveMap = dynamic(
   () => import("~/app/_components/map").then((mod) => mod.DriveMap),
@@ -172,6 +173,8 @@ export default function DrivePage() {
   });
 
   const savedDriveIdRef = useRef<string | null>(null);
+  const lastLiveActivityUpdateRef = useRef<number>(0);
+  const liveActivityStartedRef = useRef(false);
 
   const offlineEndDrive = useOfflineMutation({
     path: "drive.end",
@@ -270,6 +273,14 @@ export default function DrivePage() {
     startTracking();
   }, [driveId, tracking, startTracking]);
 
+  useEffect(() => {
+    if (liveActivityStartedRef.current) return;
+    const startedAt = localStartedAt ?? activeDrive.data?.startedAt?.toISOString() ?? null;
+    if (!driveId || !startedAt) return;
+    liveActivityStartedRef.current = true;
+    startLiveActivity("Game Drive", startedAt);
+  }, [driveId, localStartedAt, activeDrive.data?.startedAt]);
+
   const driveSession = activeDrive.data;
   const elapsed = useDriveElapsed(driveSession?.startedAt ?? localStartedAt);
   const existingRoute = (driveSession?.route ?? []) as unknown as GpsPoint[];
@@ -313,6 +324,14 @@ export default function DrivePage() {
   }));
 
   const totalSightingCount = Math.max(sightingMarkers.length, localSightingCount);
+
+  useEffect(() => {
+    if (!driveId) return;
+    const now = Date.now();
+    if (now - lastLiveActivityUpdateRef.current < 30_000) return;
+    lastLiveActivityUpdateRef.current = now;
+    updateLiveActivity(totalDistanceM, totalSightingCount);
+  }, [totalDistanceM, driveId, totalSightingCount]);
 
   if (status === "loading") {
     return <div className="flex flex-1 items-center justify-center text-brand-khaki">Loading...</div>;
@@ -360,6 +379,8 @@ export default function DrivePage() {
       void addDriveToTrip(tempId);
       setHasActiveTrip(true);
       startTracking();
+      liveActivityStartedRef.current = true;
+      startLiveActivity("Game Drive", now);
       setStarting(false);
       return;
     }
@@ -373,6 +394,8 @@ export default function DrivePage() {
       void addDriveToTrip(created.id);
       setHasActiveTrip(true);
       startTracking();
+      liveActivityStartedRef.current = true;
+      startLiveActivity("Game Drive", startedIso);
       void utils.drive.active.invalidate();
     } catch (err) {
       setMutationError(err instanceof Error ? err.message : "Failed to start drive");
@@ -396,6 +419,7 @@ export default function DrivePage() {
 
   const handleSaveDrive = () => {
     setShowFinishModal(false);
+    endLiveActivity();
     const id = driveSession?.id ?? localDriveId;
     if (id) {
       savedDriveIdRef.current = id;
@@ -405,6 +429,7 @@ export default function DrivePage() {
 
   const handleDiscardDrive = () => {
     setShowFinishModal(false);
+    endLiveActivity();
     const id = driveSession?.id ?? localDriveId;
     if (id) {
       discardDriveMutation.mutate(

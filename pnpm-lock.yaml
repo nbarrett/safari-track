@@ -26,9 +26,6 @@ importers:
       '@capacitor/core':
         specifier: ^8.1.0
         version: 8.1.0
-      '@capacitor/push-notifications':
-        specifier: ^8.0.1
-        version: 8.0.1(@capacitor/core@8.1.0)
       '@capgo/background-geolocation':
         specifier: ^8.0.21
         version: 8.0.21(@capacitor/core@8.1.0)
@@ -379,11 +376,6 @@ packages:
     resolution: {integrity: sha512-wPaQ8ayL0UY+SxydZbrmfzPs8TryZVEB6hrL/XBnXxQtb6rpEmIy/3GIltPwM+/T4m/IuaSDZOToWK65ruC00g==}
     peerDependencies:
       '@capacitor/core': ^8.1.0
-
-  '@capacitor/push-notifications@8.0.1':
-    resolution: {integrity: sha512-CDY6syMxdG81Epn+V4fCYRR4L9tVS72F1kVrTY2ka6umWy4BmwXOXPsxGxlE5PmHLOhmBwKpy3uOiIJtSpMhOw==}
-    peerDependencies:
-      '@capacitor/core': '>=8.0.0'
 
   '@capgo/background-geolocation@8.0.21':
     resolution: {integrity: sha512-we8Oc9kZKck1e3IPYWiQ6MYwvqsdEAzpDn8+26WuAI+LnnI54nqtQrKwf/elGI7tLz51mPR4eDnYHNZjaPx3PQ==}
@@ -2703,10 +2695,6 @@ snapshots:
       tslib: 2.8.1
 
   '@capacitor/ios@8.1.0(@capacitor/core@8.1.0)':
-    dependencies:
-      '@capacitor/core': 8.1.0
-
-  '@capacitor/push-notifications@8.0.1(@capacitor/core@8.1.0)':
     dependencies:
       '@capacitor/core': 8.1.0
 
