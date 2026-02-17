@@ -36,7 +36,7 @@ interface PhotoCaptureProps {
   onClose: () => void;
 }
 
-type CaptureState = "idle" | "uploading" | "detecting" | "results" | "offline-saved" | "error";
+type CaptureState = "idle" | "uploading" | "detecting" | "results" | "offline-saved";
 
 export function PhotoCapture({
   driveId,
@@ -52,7 +52,6 @@ export function PhotoCapture({
   const [detections, setDetections] = useState<Detection[]>([]);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [detectError, setDetectError] = useState<string | null>(null);
   const [exifMeta, setExifMeta] = useState<PhotoMetadata | undefined>();
 
@@ -89,10 +88,14 @@ export function PhotoCapture({
       const lat = exifLat ?? currentPosition?.lat ?? null;
       const lng = exifLng ?? currentPosition?.lng ?? null;
 
-      if (!navigator.onLine) {
+      const saveLocally = async () => {
         setState("uploading");
         await savePendingPhoto(driveId, file, lat, lng);
         setState("offline-saved");
+      };
+
+      if (!navigator.onLine) {
+        await saveLocally();
         return;
       }
 
@@ -104,14 +107,20 @@ export function PhotoCapture({
         if (lat != null) formData.append("lat", lat.toString());
         if (lng != null) formData.append("lng", lng.toString());
 
-        const uploadRes = await fetch("/api/photos/upload", {
-          method: "POST",
-          body: formData,
-        });
+        let uploadRes: Response;
+        try {
+          uploadRes = await fetch("/api/photos/upload", {
+            method: "POST",
+            body: formData,
+          });
+        } catch {
+          await saveLocally();
+          return;
+        }
 
         if (!uploadRes.ok) {
-          const err = (await uploadRes.json()) as { error?: string };
-          throw new Error(err.error ?? "Upload failed");
+          await saveLocally();
+          return;
         }
 
         const uploadData = (await uploadRes.json()) as { url: string; photoId: string };
@@ -119,34 +128,37 @@ export function PhotoCapture({
 
         setState("detecting");
 
-        const base64 = await fileToBase64(file);
-        const speciesNames = speciesList.map((s) => s.commonName);
+        try {
+          const base64 = await fileToBase64(file);
+          const speciesNames = speciesList.map((s) => s.commonName);
 
-        const identifyRes = await fetch("/api/photos/identify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ imageBase64: base64, speciesList: speciesNames }),
-        });
+          const identifyRes = await fetch("/api/photos/identify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imageBase64: base64, speciesList: speciesNames }),
+          });
 
-        if (identifyRes.ok) {
-          const identifyData = (await identifyRes.json()) as { detections: Detection[] };
-          const matched = identifyData.detections.map((d) => {
-            const species = speciesList.find(
-              (s) => s.commonName.toLowerCase() === d.commonName.toLowerCase(),
-            );
-            return { ...d, speciesId: species?.id };
-          }).filter((d) => d.speciesId);
-          setDetections(matched);
-          setSelected(new Set(matched.map((d, i) => d.confidence >= 0.7 ? i : -1).filter((i) => i >= 0)));
-        } else {
-          const errBody = (await identifyRes.json()) as { error?: string };
-          setDetectError(errBody.error ?? `Detection failed (${identifyRes.status})`);
+          if (identifyRes.ok) {
+            const identifyData = (await identifyRes.json()) as { detections: Detection[] };
+            const matched = identifyData.detections.map((d) => {
+              const species = speciesList.find(
+                (s) => s.commonName.toLowerCase() === d.commonName.toLowerCase(),
+              );
+              return { ...d, speciesId: species?.id };
+            }).filter((d) => d.speciesId);
+            setDetections(matched);
+            setSelected(new Set(matched.map((d, i) => d.confidence >= 0.7 ? i : -1).filter((i) => i >= 0)));
+          } else {
+            const errBody = (await identifyRes.json().catch(() => ({}))) as { error?: string };
+            setDetectError(errBody.error ?? `Detection failed (${identifyRes.status})`);
+          }
+        } catch {
+          setDetectError("Species detection unavailable");
         }
 
         setState("results");
-      } catch (err) {
-        setErrorMessage(err instanceof Error ? err.message : "Something went wrong");
-        setState("error");
+      } catch {
+        await saveLocally();
       }
     },
     [driveId, currentPosition, speciesList],
@@ -240,7 +252,6 @@ export function PhotoCapture({
     setDetections([]);
     setSelected(new Set());
     setPhotoUrl(null);
-    setErrorMessage(null);
     setDetectError(null);
     setExifMeta(undefined);
     setState("idle");
@@ -472,31 +483,6 @@ export function PhotoCapture({
             </div>
           )}
 
-          {state === "error" && (
-            <div className="flex flex-col items-center gap-3">
-              {preview && (
-                <img src={preview} alt="Captured" className="max-h-48 rounded-xl object-contain" />
-              )}
-              <div className="rounded-xl bg-red-500/10 px-4 py-3 text-center">
-                <div className="text-sm font-semibold text-red-600">Upload failed</div>
-                <div className="mt-1 text-xs text-brand-khaki">{errorMessage}</div>
-              </div>
-              <div className="flex w-full gap-2">
-                <button
-                  onClick={handleRetake}
-                  className="flex-1 rounded-xl bg-brand-cream py-2.5 text-sm font-bold text-brand-dark transition active:scale-95"
-                >
-                  Retry
-                </button>
-                <button
-                  onClick={onClose}
-                  className="flex-1 rounded-xl bg-brand-khaki/10 py-2.5 text-sm font-bold text-brand-khaki transition active:scale-95"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
