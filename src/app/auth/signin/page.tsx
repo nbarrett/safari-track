@@ -3,14 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
 import { cacheCredentials, cacheSession, getOfflineSession } from "~/lib/session-cache";
 
 export default function SignInPage() {
   const router = useRouter();
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
+  const searchParams = useSearchParams();
+  const [name, setName] = useState(searchParams.get("name") ?? "");
+  const [password, setPassword] = useState(searchParams.get("password") ?? "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [progressStep, setProgressStep] = useState(0);

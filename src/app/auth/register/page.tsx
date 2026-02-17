@@ -113,7 +113,7 @@ export default function RegisterPage() {
               <div className="mt-2 rounded-md bg-amber-50 p-3 text-sm text-amber-800">
                 <p>Someone with that name is already registered. Is that you?</p>
                 <Link
-                  href="/auth/signin"
+                  href={`/auth/signin?name=${encodeURIComponent(name.trim())}&password=${encodeURIComponent(password)}`}
                   className="mt-1 inline-block font-medium text-brand-brown underline hover:text-brand-brown/80"
                 >
                   Sign in instead
@@ -172,7 +172,10 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-brand-dark/60">
             Already registered?{" "}
-            <Link href="/auth/signin" className="font-medium text-brand-brown hover:text-brand-brown/80">
+            <Link
+              href={name.trim() ? `/auth/signin?name=${encodeURIComponent(name.trim())}` : "/auth/signin"}
+              className="font-medium text-brand-brown hover:text-brand-brown/80"
+            >
               Sign In
             </Link>
           </p>
