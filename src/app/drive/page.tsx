@@ -211,7 +211,12 @@ export default function DrivePage() {
 
   const handleGpsPoints = useCallback(
     (points: GpsPoint[]) => {
-      setRoutePoints((prev) => [...prev, ...points]);
+      setRoutePoints((prev) => {
+        if (points.length === 0) return prev;
+        const lastTimestamp = prev[prev.length - 1]?.timestamp ?? "";
+        const newPoints = points.filter((p) => p.timestamp > lastTimestamp);
+        return newPoints.length > 0 ? [...prev, ...newPoints] : prev;
+      });
       void addLocalRoutePoints(points);
       const id = driveIdRef.current;
       if (!id || sendingRef.current) return;

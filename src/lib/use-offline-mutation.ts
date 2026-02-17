@@ -18,6 +18,26 @@ interface OfflineMutationResult<TInput> {
   isOfflineQueued: boolean;
 }
 
+function isNetworkError(err: unknown): boolean {
+  if (!navigator.onLine) return true;
+
+  if (err instanceof TypeError) {
+    const msg = err.message.toLowerCase();
+    if (msg.includes("fetch") || msg.includes("network")) return true;
+  }
+
+  const cause = (err as { cause?: unknown })?.cause;
+  if (cause instanceof TypeError) {
+    const msg = cause.message.toLowerCase();
+    if (msg.includes("fetch") || msg.includes("network")) return true;
+  }
+
+  const code = (err as { shape?: { data?: { code?: string } } })?.shape?.data?.code;
+  if (code === "TIMEOUT" || code === "CLIENT_CLOSED_REQUEST") return true;
+
+  return false;
+}
+
 export function useOfflineMutation<TInput, TResult = unknown>(
   options: OfflineMutationOptions<TInput, TResult>,
 ): OfflineMutationResult<TInput> {
@@ -32,7 +52,15 @@ export function useOfflineMutation<TInput, TResult = unknown>(
           const result = await options.mutationFn(input);
           options.onSuccess?.(result, input);
         } catch (err) {
-          options.onError?.(err instanceof Error ? err : new Error(String(err)));
+          if (isNetworkError(err)) {
+            await enqueue(options.path, input);
+            setIsOfflineQueued(true);
+            options.onOfflineQueued?.(input);
+            options.onSuccess?.(null, input);
+            setTimeout(() => setIsOfflineQueued(false), 2000);
+          } else {
+            options.onError?.(err instanceof Error ? err : new Error(String(err)));
+          }
         } finally {
           setIsPending(false);
         }
