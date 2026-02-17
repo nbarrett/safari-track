@@ -24,15 +24,44 @@ export function SwProvider({ children }: { children: ReactNode }) {
     if (!("serviceWorker" in navigator)) return;
 
     let refreshing = false;
-    const onControllerChange = () => {
+    let intervalId: ReturnType<typeof setInterval> | undefined;
+
+    const markReady = () => {
       if (refreshing) return;
       refreshing = true;
       setUpdateReady(true);
     };
 
-    navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+    // Fallback: catch controller changes directly
+    navigator.serviceWorker.addEventListener("controllerchange", markReady);
+
+    // Actively monitor the registration for updates
+    void navigator.serviceWorker.ready.then((registration) => {
+      // A worker may already be waiting (e.g. skipWaiting didn't fire yet)
+      if (registration.waiting) {
+        markReady();
+        return;
+      }
+
+      // Listen for newly-found service workers
+      registration.addEventListener("updatefound", () => {
+        const newWorker = registration.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener("statechange", () => {
+          if (newWorker.state === "activated") markReady();
+        });
+      });
+
+      // Trigger an immediate update check, then poll every 60s
+      void registration.update().catch(() => {});
+      intervalId = setInterval(() => {
+        void registration.update().catch(() => {});
+      }, 60_000);
+    });
+
     return () => {
-      navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
+      navigator.serviceWorker.removeEventListener("controllerchange", markReady);
+      if (intervalId) clearInterval(intervalId);
     };
   }, []);
 
