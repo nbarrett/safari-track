@@ -17,7 +17,7 @@
 
 ---
 
-## For the Business Owner
+## Elevator Pitch For Fred 😁
 
 **Safari Track is a mobile app for everyone on safari — guides, guests, and lodge managers.** Guides record their GPS route in real time and tap to log every animal they spot. Guests follow along on their own device, browse the wildlife checklist, and relive drives afterwards on a beautiful map with every sighting pinned to the exact location. Lodge managers oversee all drive history and species data across the property. Everything works offline in the bush and syncs automatically when back in Wi-Fi range. Think of it as Strava for safari — but instead of tracking fitness, it tracks wildlife encounters across your lodge.
 
