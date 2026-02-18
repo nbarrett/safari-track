@@ -1,4 +1,4 @@
-export const APP_VERSION = "1.10.0";
+export const APP_VERSION = "1.11.0";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,6 +8,16 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "1.11.0",
+    date: "18 Feb 2026",
+    title: "New features and fixes",
+    changes: [
+      "Migrate primary domain to safaritrack.app",
+      "Remove rhino image from all public-facing pages",
+      "Prevent duplicate Live Activity instances on drive start",
+    ],
+  },
   {
     version: "1.10.0",
     date: "17 Feb 2026",
