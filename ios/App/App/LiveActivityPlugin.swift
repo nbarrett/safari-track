@@ -27,19 +27,22 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
         let driveName = call.getString("driveName") ?? "Game Drive"
         let startedAtString = call.getString("startedAt") ?? ""
         let startedAt = ISO8601DateFormatter().date(from: startedAtString) ?? Date()
-        let attributes = DriveActivityAttributes(driveName: driveName, startedAt: startedAt)
-        let initialState = DriveActivityAttributes.ContentState(distanceMetres: 0, sightingCount: 0)
-        do {
-            let activity = try Activity.request(
-                attributes: attributes,
-                content: ActivityContent(state: initialState, staleDate: nil),
-                pushType: nil
-            )
-            UserDefaults(suiteName: appGroupId)?.set(activity.id, forKey: activityIdKey)
-            call.resolve()
-        } catch {
-            call.resolve()
+        Task {
+            for activity in Activity<DriveActivityAttributes>.activities {
+                await activity.end(nil, dismissalPolicy: .immediate)
+            }
+            let attributes = DriveActivityAttributes(driveName: driveName, startedAt: startedAt)
+            let initialState = DriveActivityAttributes.ContentState(distanceMetres: 0, sightingCount: 0)
+            do {
+                let activity = try Activity.request(
+                    attributes: attributes,
+                    content: ActivityContent(state: initialState, staleDate: nil),
+                    pushType: nil
+                )
+                UserDefaults(suiteName: appGroupId)?.set(activity.id, forKey: activityIdKey)
+            } catch {}
         }
+        call.resolve()
     }
 
     @objc func updateActivity(_ call: CAPPluginCall) {

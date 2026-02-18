@@ -15,13 +15,13 @@
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
-		BB0000000000000000000016 /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000014 /* LiveActivityPlugin.swift */; };
-		BB000000000000000000001B /* SafariTrackViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000001A /* SafariTrackViewController.swift */; };
-		BB0000000000000000000017 /* DriveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000C /* DriveActivityAttributes.swift */; };
 		BB0000000000000000000011 /* DriveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000C /* DriveActivityAttributes.swift */; };
 		BB0000000000000000000012 /* DriveWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000D /* DriveWidgetBundle.swift */; };
 		BB0000000000000000000013 /* DriveWidgetLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000E /* DriveWidgetLiveActivity.swift */; };
+		BB0000000000000000000016 /* LiveActivityPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000014 /* LiveActivityPlugin.swift */; };
+		BB0000000000000000000017 /* DriveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000000C /* DriveActivityAttributes.swift */; };
 		BB0000000000000000000019 /* DriveWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = BB0000000000000000000005 /* DriveWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		BB000000000000000000001B /* SafariTrackViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB000000000000000000001A /* SafariTrackViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,8 +66,8 @@
 		BB000000000000000000000F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB0000000000000000000010 /* DriveWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DriveWidget.entitlements; sourceTree = "<group>"; };
 		BB0000000000000000000014 /* LiveActivityPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityPlugin.swift; sourceTree = "<group>"; };
-		BB000000000000000000001A /* SafariTrackViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariTrackViewController.swift; sourceTree = "<group>"; };
 		BB0000000000000000000015 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		BB000000000000000000001A /* SafariTrackViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariTrackViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -414,7 +414,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 93S4343SAT;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -438,7 +438,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 93S4343SAT;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
