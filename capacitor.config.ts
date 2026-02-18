@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: "Safari Track",
   webDir: "out",
   server: {
-    url: "https://safari-track.fly.dev",
+    url: "https://safaritrack.app",
     cleartext: false,
   },
   ios: {

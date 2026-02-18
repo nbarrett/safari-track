@@ -21,7 +21,7 @@ const config: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "safari-track.fly.dev",
+        hostname: "safaritrack.app",
       },
     ],
   },
