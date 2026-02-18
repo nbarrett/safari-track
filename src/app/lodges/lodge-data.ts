@@ -32,7 +32,7 @@ export const LODGE_DATA: LodgeShowcase[] = [
       "Open 4x4 game drives & bush walks",
       "Klaserie River frontage",
     ],
-    heroImages: ["/hero-elephants.jpg", "/images/mammals.jpg", "/hero-rhinos.webp"],
+    heroImages: ["/hero-elephants.jpg", "/images/mammals.jpg"],
     capacity: "10 guests in 5 thatched chalets",
     location: "North-western Klaserie Private Nature Reserve",
     brand: {

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 
 const DEFAULT_IMAGES = [
   "/hero-elephants.jpg",
-  "/hero-rhinos.webp",
   "/hero-river-sunrise.avif",
   "/hero-riverbed.avif",
   "/hero-wildlife-01.jpg",

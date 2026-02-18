@@ -7,7 +7,7 @@ export function AuthCard({ children }: { children: React.ReactNode }) {
     <main className="relative flex min-h-screen items-center justify-center px-4">
       <div className="pointer-events-none absolute inset-0 z-0">
         <Image
-          src="/hero-rhinos.webp"
+          src="/hero-elephants.jpg"
           alt="Safari wildlife"
           fill
           className="object-cover"
