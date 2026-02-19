@@ -140,7 +140,7 @@ start_dev() {
   info "Starting Next.js dev server with Turbopack (logs: $DEV_LOG)..."
   (
     cd "$ROOT_DIR"
-    pnpm dev --port "${DEV_PORT:-3003}"
+    pnpm dev:direct --port "${DEV_PORT:-3003}"
   ) | tee -a "$DEV_LOG" &
   DEV_PID=$!
 }

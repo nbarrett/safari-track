@@ -10,7 +10,9 @@
     "db:populate-images": "tsx prisma/populate-images.ts",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "dev": "next dev --turbo",
+    "dev": "claude-swarm start",
+    "stop": "claude-swarm stop",
+    "dev:direct": "next dev --turbo",
     "postinstall": "prisma generate",
     "preview": "next build && next start",
     "start": "next start",
@@ -51,6 +53,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@annix/claude-swarm": "^0.1.4",
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/ios": "^8.1.0",

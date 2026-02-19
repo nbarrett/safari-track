@@ -55,6 +55,7 @@ export function PhotoCapture({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [detectError, setDetectError] = useState<string | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
   const [exifMeta, setExifMeta] = useState<PhotoMetadata | undefined>();
 
   const processPhoto = useCallback(
@@ -261,20 +262,28 @@ export function PhotoCapture({
   };
 
   const openCamera = () => {
+    setCameraError(null);
     if (isNative()) {
-      void takeNativePhoto().then((file) => {
-        if (file) void processPhoto(file);
-      });
+      takeNativePhoto()
+        .then((file) => { if (file) void processPhoto(file); })
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : "Camera unavailable";
+          if (!msg.toLowerCase().includes("cancel")) setCameraError(msg);
+        });
     } else {
       fileInputRef.current?.click();
     }
   };
 
   const openGallery = () => {
+    setCameraError(null);
     if (isNative()) {
-      void pickNativePhoto().then((file) => {
-        if (file) void processPhoto(file);
-      });
+      pickNativePhoto()
+        .then((file) => { if (file) void processPhoto(file); })
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : "Photo library unavailable";
+          if (!msg.toLowerCase().includes("cancel")) setCameraError(msg);
+        });
     } else {
       galleryInputRef.current?.click();
     }
@@ -314,6 +323,12 @@ export function PhotoCapture({
         <div className="p-4">
           {state === "idle" && !preview && (
             <div className="flex flex-col items-center gap-4 py-8">
+              {cameraError && (
+                <div className="w-full rounded-xl bg-red-500/10 px-4 py-3 text-center">
+                  <div className="text-sm font-semibold text-red-600">Camera Error</div>
+                  <div className="mt-1 text-xs text-brand-khaki">{cameraError}</div>
+                </div>
+              )}
               <div className="flex items-center gap-6">
                 <div className="flex flex-col items-center gap-2">
                   <button

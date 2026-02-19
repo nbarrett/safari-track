@@ -1,0 +1,10 @@
+{
+  "apps": [
+    {
+      "name": "app",
+      "start": { "mac": "./run-dev.sh", "windows": ".\\run-dev.ps1" },
+      "port": 3003,
+      "readyPattern": "Ready in"
+    }
+  ]
+}

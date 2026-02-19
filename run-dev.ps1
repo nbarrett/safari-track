@@ -1,7 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$NodeVersion = "22.21.1",
-    [string]$DevLog = "dev.log"
+    [string]$NodeVersion = "22.21.1"
 )
 
 Set-StrictMode -Version Latest
@@ -28,7 +27,6 @@ function Use-NodeVersion {
             return
         }
     }
-
     if (Get-Command nvm -ErrorAction SilentlyContinue) {
         nvm install $NodeVersion | Out-Null
         nvm use $NodeVersion | Out-Null
@@ -36,34 +34,24 @@ function Use-NodeVersion {
         Write-Info "Using Node $(node -v) via nvm-windows"
         return
     }
-
     Throw-Error "Node.js not detected. Install Node $NodeVersion or nvm-windows."
 }
 
 function Ensure-Pnpm {
-    if (Get-Command pnpm -ErrorAction SilentlyContinue) {
-        return
-    }
-
+    if (Get-Command pnpm -ErrorAction SilentlyContinue) { return }
     Write-Info "pnpm not found, installing..."
     try {
         if (Get-Command corepack -ErrorAction SilentlyContinue) {
             corepack enable pnpm 2>$null
-            if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-                npm install -g pnpm | Out-Null
-            }
+            if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) { npm install -g pnpm | Out-Null }
         } else {
             npm install -g pnpm | Out-Null
         }
-
         if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
-            Throw-Error "Failed to install pnpm. Please install it manually: npm install -g pnpm"
+            Throw-Error "Failed to install pnpm. Please install manually: npm install -g pnpm"
         }
         Write-Info "pnpm installed successfully"
-    }
-    catch {
-        Throw-Error "Failed to install pnpm: $_"
-    }
+    } catch { Throw-Error "Failed to install pnpm: $_" }
 }
 
 function Ensure-EnvFile {
@@ -74,31 +62,18 @@ function Ensure-EnvFile {
 }
 
 function Test-PortInUse {
-    param(
-        [string]$Host_,
-        [int]$Port
-    )
-
+    param([int]$Port)
     $client = New-Object System.Net.Sockets.TcpClient
     try {
-        $async = $client.BeginConnect($Host_, $Port, $null, $null)
-        if ($async.AsyncWaitHandle.WaitOne(200) -and $client.Connected) {
-            $client.EndConnect($async)
-            return $true
-        }
-    }
-    catch {
-        return $false
-    }
-    finally {
-        $client.Dispose()
-    }
+        $async = $client.BeginConnect("localhost", $Port, $null, $null)
+        if ($async.AsyncWaitHandle.WaitOne(200) -and $client.Connected) { $client.EndConnect($async); return $true }
+    } catch { return $false } finally { $client.Dispose() }
     return $false
 }
 
 function Check-Port {
     $port = if ($env:DEV_PORT) { [int]$env:DEV_PORT } else { 3003 }
-    if (Test-PortInUse -Host_ "localhost" -Port $port) {
+    if (Test-PortInUse -Port $port) {
         Throw-Error "Port $port is already in use. Run .\kill-dev.ps1 first or set DEV_PORT to use a different port."
     }
 }
@@ -110,10 +85,7 @@ function Install-Dependencies {
         pnpm install
         Write-Info "Generating Prisma client..."
         pnpm exec prisma generate
-    }
-    finally {
-        Pop-Location
-    }
+    } finally { Pop-Location }
 }
 
 function Push-Schema {
@@ -121,54 +93,40 @@ function Push-Schema {
     try {
         Write-Info "Pushing schema to MongoDB..."
         pnpm exec prisma db push
-    }
-    finally {
-        Pop-Location
-    }
+    } finally { Pop-Location }
 }
 
 function Start-DevServer {
-    $logPath = Join-Path $RepoRoot $DevLog
+    $port = if ($env:DEV_PORT) { $env:DEV_PORT } else { "3003" }
 
-    # Clear Next.js cache
     Write-Info "Clearing Next.js cache..."
     $nextDir = Join-Path $RepoRoot ".next"
-    $cacheDir = Join-Path $RepoRoot "node_modules/.cache"
+    $cacheDir = Join-Path $RepoRoot "node_modules\.cache"
     if (Test-Path $nextDir) { Remove-Item -Recurse -Force $nextDir }
     if (Test-Path $cacheDir) { Remove-Item -Recurse -Force $cacheDir }
 
-    if (Test-Path $logPath) { Remove-Item $logPath }
+    $null = New-Item -ItemType Directory -Force -Path (Join-Path $RepoRoot "logs") -ErrorAction SilentlyContinue
 
     $job = Start-Job -Name "safari-track-dev" -ScriptBlock {
-        param($WorkingDir)
-        Set-StrictMode -Version Latest
+        param($WorkingDir, $Port)
         Set-Location $WorkingDir
-        pnpm dev
-    } -ArgumentList $RepoRoot
+        pnpm dev --port $Port
+    } -ArgumentList $RepoRoot, $port
 
-    $port = if ($env:DEV_PORT) { $env:DEV_PORT } else { "3003" }
     Write-Info "Safari Track dev server -> http://localhost:$port"
-    Write-Info "Logs -> $logPath"
     Write-Info "Press Ctrl+C to stop."
 
     try {
         while ($true) {
             $output = Receive-Job -Job $job -ErrorAction SilentlyContinue
-            if ($output) {
-                $output | Tee-Object -FilePath $logPath -Append
-            }
-
+            if ($output) { $output | Write-Host }
             if ($job.State -ne 'Running') { break }
             Start-Sleep -Milliseconds 250
         }
-
-        Receive-Job -Job $job -ErrorAction SilentlyContinue | Out-File -FilePath $logPath -Append
+        Receive-Job -Job $job -ErrorAction SilentlyContinue | Out-Null
         Wait-Job -Job $job | Out-Null
-    }
-    finally {
-        if ($job.State -eq 'Running') {
-            Stop-Job -Job $job -Force
-        }
+    } finally {
+        if ($job.State -eq 'Running') { Stop-Job -Job $job -Force }
         Remove-Job -Job $job -Force
     }
 }

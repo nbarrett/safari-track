@@ -34,9 +34,10 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             let attributes = DriveActivityAttributes(driveName: driveName, startedAt: startedAt)
             let initialState = DriveActivityAttributes.ContentState(distanceMetres: 0, sightingCount: 0)
             do {
+                let staleDate = Calendar.current.date(byAdding: .hour, value: 12, to: Date())
                 let activity = try Activity.request(
                     attributes: attributes,
-                    content: ActivityContent(state: initialState, staleDate: nil),
+                    content: ActivityContent(state: initialState, staleDate: staleDate),
                     pushType: nil
                 )
                 UserDefaults(suiteName: appGroupId)?.set(activity.id, forKey: activityIdKey)
@@ -61,8 +62,9 @@ public class LiveActivityPlugin: CAPPlugin, CAPBridgedPlugin {
             sightingCount: sightingCount
         )
         Task {
+            let staleDate = Calendar.current.date(byAdding: .hour, value: 12, to: Date())
             for activity in Activity<DriveActivityAttributes>.activities where activity.id == activityId {
-                await activity.update(ActivityContent(state: updatedState, staleDate: nil))
+                await activity.update(ActivityContent(state: updatedState, staleDate: staleDate))
             }
         }
         call.resolve()

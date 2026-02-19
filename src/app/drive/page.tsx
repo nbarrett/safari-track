@@ -175,6 +175,23 @@ export default function DrivePage() {
   const savedDriveIdRef = useRef<string | null>(null);
   const lastLiveActivityUpdateRef = useRef<number>(0);
   const liveActivityStartedRef = useRef(false);
+  const wantsPhotoRef = useRef(false);
+  const autoPhotoRef = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("photo") === "1") {
+      wantsPhotoRef.current = true;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (autoPhotoRef.current || !wantsPhotoRef.current) return;
+    const id = activeDrive.data?.id ?? localDriveId;
+    if (!id) return;
+    autoPhotoRef.current = true;
+    setShowCamera(true);
+  }, [activeDrive.data?.id, localDriveId]);
 
   const offlineEndDrive = useOfflineMutation({
     path: "drive.end",
