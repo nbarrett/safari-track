@@ -97,8 +97,8 @@ importers:
         version: 3.25.76
     devDependencies:
       '@annix/claude-swarm':
-        specifier: 0.1.8
-        version: 0.1.8(@types/node@20.19.33)
+        specifier: 0.1.10
+        version: 0.1.10(@types/node@20.19.33)
       '@capacitor/android':
         specifier: ^8.1.0
         version: 8.1.0(@capacitor/core@8.1.0)
@@ -148,8 +148,8 @@ packages:
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
     engines: {node: '>=10'}
 
-  '@annix/claude-swarm@0.1.8':
-    resolution: {integrity: sha512-Qgo4YyRAgx+Qw3HDwIiyc16WHRfgwwaEYOTaBBrV4dKyrZBPxUf9CkK1x+Vs3Dz6S59KSH+CZtZoyR1q5D/A3A==}
+  '@annix/claude-swarm@0.1.10':
+    resolution: {integrity: sha512-fKWtQ40tgBhG1JTkiwSloa5Hy4OpJrvQYVa/u5M6gICmoILkbabppFXJ1U43BUAvz56Qs7+olxQMDtZBQ1LnMw==}
     engines: {node: '>=18.0.0'}
     hasBin: true
 
@@ -2299,7 +2299,7 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@annix/claude-swarm@0.1.8(@types/node@20.19.33)':
+  '@annix/claude-swarm@0.1.10(@types/node@20.19.33)':
     dependencies:
       '@inquirer/prompts': 8.2.1(@types/node@20.19.33)
       chalk: 5.6.2
