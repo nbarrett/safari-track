@@ -1,13 +1,15 @@
-#!/usr/bin/env bash
-set -euo pipefail
+#!/bin/bash
+
+set -e
 
 REMOTE="${1:-origin}"
+ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 
-# Load nvm
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 
-# Read refs from stdin: local_ref local_sha remote_ref remote_sha
+source "${ROOT_DIR}/node_modules/@annix/claude-swarm/timer.sh"
+
 should_run=false
 while read -r local_ref local_sha remote_ref remote_sha; do
   case "$remote_ref" in
@@ -18,26 +20,58 @@ while read -r local_ref local_sha remote_ref remote_sha; do
 done
 
 if [ "$should_run" = true ]; then
-  echo "Pre-push: running type check..."
-  pnpm exec tsc --noEmit
+  echo "Running pre-push checks..."
 
-  if pnpm run --silent test --passWithNoTests 2>/dev/null; then
-    echo "Tests passed."
-  else
-    echo "Pre-push: no test script configured, skipping tests."
-  fi
+  pull_rebase() {
+    git fetch origin main 2>&1
+    local behind ahead
+    behind=$(git rev-list --count HEAD..origin/main)
+    ahead=$(git rev-list --count origin/main..HEAD)
 
-  echo "Pre-push: checking for version bump..."
-  SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-  BEFORE_SHA=$(git rev-parse HEAD)
-  node "$SCRIPT_DIR/../scripts/auto-changelog.mjs" || true
-  AFTER_SHA=$(git rev-parse HEAD)
+    if [ "$behind" -eq 0 ]; then
+      echo "Already up to date with remote."
+      return 0
+    fi
 
-  if [ "$BEFORE_SHA" != "$AFTER_SHA" ]; then
-    BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    echo "Pre-push: pushing version bump..."
-    git push --no-verify "$REMOTE" "$BRANCH"
-  fi
+    if [ "$ahead" -gt 0 ]; then
+      echo "Branch has diverged (${ahead} ahead, ${behind} behind) — skipping auto-rebase."
+      echo "If this is an intended force push, push will be rejected unless you use --force-with-lease."
+      return 0
+    fi
+
+    echo "Integrating ${behind} new remote commit(s)..."
+    if ! git rebase origin/main; then
+      git rebase --abort 2>/dev/null || true
+      echo ""
+      echo "Rebase conflict: resolve the conflict below, then push again."
+      return 1
+    fi
+  }
+
+  type_check() {
+    rm -rf "$ROOT_DIR/.next/dev"
+    pnpm run typecheck
+  }
+
+  auto_changelog() {
+    local before_sha after_sha
+    before_sha=$(git rev-parse HEAD)
+    node "${ROOT_DIR}/scripts/auto-changelog.mjs" || true
+    after_sha=$(git rev-parse HEAD)
+    if [ "$before_sha" != "$after_sha" ]; then
+      local branch
+      branch=$(git rev-parse --abbrev-ref HEAD)
+      echo "Pre-push: pushing version bump..."
+      git push --no-verify "$REMOTE" "$branch"
+    fi
+  }
+
+  timed_step "git pull --rebase" pull_rebase
+  timed_step "type check" type_check
+  timed_step "auto-changelog" auto_changelog
+  timed_step "build" pnpm run build
+
+  print_timing_summary
 
   echo "Pre-push checks passed. Proceeding with push."
 else
