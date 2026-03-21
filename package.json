@@ -37,6 +37,7 @@
     "@trpc/client": "^11.0.0",
     "@trpc/react-query": "^11.0.0",
     "@trpc/server": "^11.0.0",
+    "@uiw/react-md-editor": "^4.0.11",
     "bcryptjs": "^3.0.3",
     "exifreader": "^4.36.1",
     "idb-keyval": "^6.2.2",
@@ -46,6 +47,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
+    "react-markdown": "^10.1.0",
     "server-only": "^0.0.1",
     "serwist": "^9.5.5",
     "sharp": "^0.34.5",
@@ -53,7 +55,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@annix/claude-swarm": "0.1.13",
+    "@annix/claude-swarm": "0.1.22",
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/ios": "^8.1.0",
