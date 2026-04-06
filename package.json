@@ -55,7 +55,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@annix/claude-swarm": "0.1.22",
+    "@annix/claude-swarm": "0.1.26",
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/ios": "^8.1.0",
